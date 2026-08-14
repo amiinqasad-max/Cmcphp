@@ -271,6 +271,9 @@ class PostResource extends Resource
                 Tables\Actions\Action::make('preview')
                     ->icon('heroicon-o-eye')
                     ->url(fn (Post $record) => route('articles.show', $record), shouldOpenInNewTab: true),
+                Tables\Actions\Action::make('analytics')
+                    ->icon('heroicon-o-chart-bar')
+                    ->url(fn (Post $record) => static::getUrl('analytics', ['record' => $record])),
                 Tables\Actions\Action::make('duplicate')
                     ->icon('heroicon-o-document-duplicate')
                     ->requiresConfirmation()
@@ -310,6 +313,7 @@ class PostResource extends Resource
             'index' => Pages\ListPosts::route('/'),
             'create' => Pages\CreatePost::route('/create'),
             'edit' => Pages\EditPost::route('/{record}/edit'),
+            'analytics' => Pages\ViewPostAnalytics::route('/{record}/analytics'),
         ];
     }
 }
