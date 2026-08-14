@@ -14,7 +14,10 @@ return [
     |
     */
 
-    'anonymous_session_cookie' => env('ANONYMOUS_SESSION_COOKIE', 'cmcphp_session'),
+    // Deliberately not "{app}_session" — Laravel's own session cookie
+    // (config/session.php) defaults to exactly that pattern, so a same-named
+    // cookie here would silently collide with it.
+    'anonymous_session_cookie' => env('ANONYMOUS_SESSION_COOKIE', 'cmcphp_anon_session'),
 
     'anonymous_session_lifetime_days' => 400, // ~13 months, browser cookie cap
 

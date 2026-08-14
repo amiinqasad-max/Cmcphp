@@ -62,6 +62,9 @@
                 @endforeach
             </div>
         @endif
+
+        {{-- Populated by auto-next.js once the server confirms completion — never shown speculatively. --}}
+        <div id="cmcphp-completion-banner" class="hidden mt-8 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3" role="status" aria-live="polite"></div>
     </article>
 
     @if ($related->isNotEmpty())
@@ -74,6 +77,4 @@
             </div>
         </section>
     @endif
-
-    {{-- Automatic next-article navigation lands in Phase 6. --}}
 </x-layouts.public>

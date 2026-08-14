@@ -9,6 +9,7 @@ use App\Filament\Resources\PostResource\Pages;
 use App\Filament\Support\MediaSelectField;
 use App\Models\Media;
 use App\Models\Post;
+use App\Services\SettingsService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -94,6 +95,29 @@ class PostResource extends Resource
                     Forms\Components\Section::make('Featured Image')
                         ->schema([
                             MediaSelectField::make('featured_image_media_id', 'featuredImage', ''),
+                        ]),
+                    Forms\Components\Section::make('Article Completion')
+                        ->description('When is this article considered "read"? Reading % and video count are per-article overrides — leave blank to use the site-wide defaults.')
+                        ->schema([
+                            Forms\Components\TextInput::make('completion_reading_threshold')
+                                ->label('Required reading %')
+                                ->numeric()
+                                ->minValue(1)
+                                ->maxValue(100)
+                                ->suffix('%')
+                                ->placeholder((string) app(SettingsService::class)->completionReadingThreshold()),
+                            Forms\Components\TextInput::make('completion_required_videos')
+                                ->label('Required videos')
+                                ->numeric()
+                                ->minValue(0)
+                                ->maxValue(3)
+                                ->placeholder(fn (?Post $record) => (string) ($record?->requiredVideos()->count() ?? 0))
+                                ->helperText('Defaults to the number of videos marked "Required" above.'),
+                            Forms\Components\Placeholder::make('auto_next_info')
+                                ->label('Auto-next')
+                                ->content(fn () => app(SettingsService::class)->autoNextEnabled()
+                                    ? 'On, '.app(SettingsService::class)->autoNextDelaySeconds().'s delay (site-wide setting)'
+                                    : 'Off (site-wide setting)'),
                         ]),
                     Forms\Components\Section::make('Next Article')
                         ->description('What readers see after completing this article.')

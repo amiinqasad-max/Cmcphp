@@ -20,7 +20,10 @@ use Illuminate\Support\Facades\Log;
  */
 class EngagementTrackingService
 {
-    public function __construct(private readonly SettingsService $settings) {}
+    public function __construct(
+        private readonly SettingsService $settings,
+        private readonly ArticleCompletionService $completionService,
+    ) {}
 
     /**
      * @param  EngagementEventData[]  $events
@@ -61,22 +64,26 @@ class EngagementTrackingService
                 return;
             }
 
+            $post = Post::find($event->postId);
+
+            if (! $post) {
+                return;
+            }
+
             if ($event->eventType->isArticleEvent()) {
-                $this->applyArticleEvent($event, $sessionId, $userId);
+                $this->applyArticleEvent($event, $post, $sessionId, $userId);
             } elseif ($event->eventType->isVideoEvent()) {
                 $this->applyVideoEvent($event, $sessionId, $userId);
             }
+
+            // Cheap and idempotent: no-ops instantly if already completed,
+            // otherwise re-checks reading + required-video state (§10).
+            $this->completionService->evaluate($post, $sessionId, $userId);
         });
     }
 
-    private function applyArticleEvent(EngagementEventData $event, string $sessionId, ?string $userId): void
+    private function applyArticleEvent(EngagementEventData $event, Post $post, string $sessionId, ?string $userId): void
     {
-        $post = Post::find($event->postId);
-
-        if (! $post) {
-            return;
-        }
-
         $threshold = $post->completion_reading_threshold ?? $this->settings->completionReadingThreshold();
         $now = now();
 
