@@ -6,6 +6,7 @@ use App\Enums\PostStatus;
 use App\Filament\Resources\PostResource;
 use App\Filament\Resources\PostResource\Pages\CreatePost;
 use App\Filament\Resources\PostResource\Pages\ListPosts;
+use App\Models\Media;
 use App\Models\Post;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
@@ -110,5 +111,36 @@ class PostResourceTest extends TestCase
 
         $this->assertSame('How to Save Money', $post->title);
         $this->assertSame('How to Save Money — Tips', $post->seo->seo_title);
+    }
+
+    public function test_post_can_be_created_with_a_video_attached_via_the_repeater(): void
+    {
+        $editor = $this->userWithRole('editor');
+        $this->actingAs($editor);
+        $video = Media::factory()->video(durationSeconds: 42)->create();
+
+        Livewire::test(CreatePost::class)
+            ->fillForm([
+                'title' => 'Video Article',
+                'slug' => 'video-article',
+                'content' => '<p>Intro.</p><p>[[VIDEO_1]]</p>',
+                'status' => PostStatus::Draft->value,
+                'author_id' => $editor->id,
+                'videos' => [
+                    'a' => [
+                        'media_id' => $video->id,
+                        'is_required' => true,
+                        'completion_threshold' => 90,
+                    ],
+                ],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $post = Post::where('slug', 'video-article')->firstOrFail();
+
+        $this->assertCount(1, $post->videos);
+        $this->assertSame(1, $post->videos->first()->position);
+        $this->assertSame(42, $post->videos->first()->duration_seconds);
     }
 }

@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Services\ArticleContentRenderer;
 use Illuminate\View\View;
 
 class ArticleController extends Controller
 {
+    public function __construct(private readonly ArticleContentRenderer $contentRenderer) {}
+
     public function index(): View
     {
         $posts = Post::published()
@@ -25,9 +28,11 @@ class ArticleController extends Controller
     public function show(string $slug): View
     {
         $post = Post::published()
-            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage'])
+            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage', 'videos.media.thumbnail'])
             ->where('slug', $slug)
             ->firstOrFail();
+
+        $blocks = $this->contentRenderer->blocks($post);
 
         $related = Post::published()
             ->whereKeyNot($post->id)
@@ -41,6 +46,7 @@ class ArticleController extends Controller
 
         return view('public.articles.show', [
             'post' => $post,
+            'blocks' => $blocks,
             'related' => $related,
             'title' => $post->seo?->seo_title ?: $post->title,
             'description' => $post->seo?->meta_description ?: $post->excerpt,

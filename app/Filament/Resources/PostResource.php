@@ -2,10 +2,12 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\MediaType;
 use App\Enums\NextArticleMode;
 use App\Enums\PostStatus;
 use App\Filament\Resources\PostResource\Pages;
 use App\Filament\Support\MediaSelectField;
+use App\Models\Media;
 use App\Models\Post;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -112,6 +114,49 @@ class PostResource extends Resource
             Forms\Components\Group::make()
                 ->columnSpanFull()
                 ->schema([
+                    Forms\Components\Section::make('Videos')
+                        ->description('Up to 3 videos. Insert them into the body by typing [[VIDEO_1]], [[VIDEO_2]], or [[VIDEO_3]] on their own line where each should appear.')
+                        ->schema([
+                            Forms\Components\Repeater::make('videos')
+                                ->relationship()
+                                ->orderColumn('position')
+                                ->maxItems(3)
+                                ->defaultItems(0)
+                                ->addActionLabel('Add video')
+                                ->itemLabel(fn (array $state) => isset($state['media_id']) && $state['media_id']
+                                    ? (Media::find($state['media_id'])?->title ?? 'Video')
+                                    : 'New video')
+                                ->schema([
+                                    Forms\Components\Select::make('media_id')
+                                        ->label('Video file')
+                                        ->relationship('media', 'title', fn (Builder $query) => $query->where('type', MediaType::Video->value))
+                                        ->searchable()
+                                        ->preload()
+                                        ->required()
+                                        ->helperText('Upload new videos via the Media Library, then select them here.'),
+                                    Forms\Components\Placeholder::make('duration_display')
+                                        ->label('Duration')
+                                        ->content(function (Forms\Get $get) {
+                                            $media = Media::find($get('media_id'));
+
+                                            return $media?->duration_seconds
+                                                ? gmdate('i:s', $media->duration_seconds).' (auto-detected)'
+                                                : 'Detected automatically once selected.';
+                                        }),
+                                    Forms\Components\Toggle::make('is_required')
+                                        ->label('Required for article completion')
+                                        ->default(true),
+                                    Forms\Components\TextInput::make('completion_threshold')
+                                        ->label('Completion threshold')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->maxValue(100)
+                                        ->suffix('%')
+                                        ->default(90)
+                                        ->required(),
+                                ])
+                                ->columns(2),
+                        ]),
                     Forms\Components\Section::make('SEO')
                         ->collapsible()
                         ->collapsed()

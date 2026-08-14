@@ -40,12 +40,18 @@
 
         {{-- Article content is authored exclusively by authenticated admin/editor
              roles through the Filament rich text editor, not public user input,
-             so it is rendered as trusted HTML here. --}}
+             so each block's HTML is rendered as trusted markup here. Videos are
+             spliced in at their [[VIDEO_n]] marker position by ArticleContentRenderer;
+             ad placements (Phase 7) are interleaved into this same block sequence. --}}
         <div class="prose prose-gray mt-8 max-w-none prose-headings:font-semibold prose-a:text-amber-600">
-            {!! $post->content !!}
+            @foreach ($blocks as $block)
+                @if ($block['type'] === 'video')
+                    <x-video-player :video="$block['video']" />
+                @elseif (filled($block['html']))
+                    {!! $block['html'] !!}
+                @endif
+            @endforeach
         </div>
-
-        {{-- Videos (three-video system) and ad placements render here from Phase 4/7 onward. --}}
 
         @if ($post->tags->isNotEmpty())
             <div class="mt-10 flex flex-wrap gap-2 border-t border-gray-100 pt-6">
