@@ -26,6 +26,9 @@ class SeoMetadata extends Model
         'og_description',
         'og_image_media_id',
         'twitter_card',
+        'twitter_title',
+        'twitter_description',
+        'twitter_image_media_id',
         'schema_type',
         'schema_json',
     ];
@@ -47,5 +50,10 @@ class SeoMetadata extends Model
     public function ogImage(): BelongsTo
     {
         return $this->belongsTo(Media::class, 'og_image_media_id');
+    }
+
+    public function twitterImage(): BelongsTo
+    {
+        return $this->belongsTo(Media::class, 'twitter_image_media_id');
     }
 }

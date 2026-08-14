@@ -16,18 +16,42 @@ use Illuminate\Http\UploadedFile;
 /**
  * A reusable "pick from the Media Library, or upload a new image inline"
  * field. Every image reference in the CMS (post featured image, category
- * image, OG image, ...) goes through this so uploads always create a proper
- * `media` row rather than a bare file path — see docs/ARCHITECTURE.md §13.
+ * image, OG image, site logo/favicon, ...) goes through this so uploads
+ * always create a proper `media` row rather than a bare file path — see
+ * docs/ARCHITECTURE.md §13.
  */
 class MediaSelectField
 {
+    /** Bound to an Eloquent relationship — for a form backed by a model (Post, Page, ...). */
     public static function make(string $fieldName, string $relationshipName, string $label = 'Image', bool $imagesOnly = true): Select
+    {
+        return static::base($fieldName, $label, $imagesOnly)
+            ->relationship($relationshipName, 'title')
+            ->searchable()
+            ->preload();
+    }
+
+    /**
+     * Not bound to any relationship — for forms with no backing Eloquent
+     * record (e.g. the Settings page, which stores a media UUID as a plain
+     * settings value rather than a foreign key).
+     */
+    public static function plain(string $fieldName, string $label = 'Image', bool $imagesOnly = true): Select
+    {
+        return static::base($fieldName, $label, $imagesOnly)
+            ->searchable()
+            ->getSearchResultsUsing(fn (string $search) => Media::query()
+                ->when($imagesOnly, fn ($query) => $query->where('type', MediaType::Image))
+                ->where('title', 'ilike', "%{$search}%")
+                ->limit(50)
+                ->pluck('title', 'id'))
+            ->getOptionLabelUsing(fn ($value) => Media::find($value)?->title ?: null);
+    }
+
+    private static function base(string $fieldName, string $label, bool $imagesOnly): Select
     {
         return Select::make($fieldName)
             ->label($label)
-            ->relationship($relationshipName, 'title')
-            ->searchable()
-            ->preload()
             ->getOptionLabelFromRecordUsing(fn (Media $media) => $media->title ?: basename($media->path))
             ->createOptionForm([
                 FileUpload::make('upload')

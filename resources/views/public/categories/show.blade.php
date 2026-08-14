@@ -1,4 +1,7 @@
-<x-layouts.public :title="$title" :description="$description">
+<x-layouts.public :title="$title" :description="$description" :canonical="$canonical ?? null"
+    :robots-index="$robotsIndex ?? true" :robots-follow="$robotsFollow ?? true"
+    :og-title="$ogTitle ?? null" :og-description="$ogDescription ?? null" :og-image="$ogImage ?? null" :og-type="$ogType ?? 'website'"
+    :twitter-card="$twitterCard ?? 'summary_large_image'" :json-ld="$jsonLd ?? null">
     <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" class="mb-4 text-sm text-gray-500">
             <ol class="flex flex-wrap items-center gap-1">

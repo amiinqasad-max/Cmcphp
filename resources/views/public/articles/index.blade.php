@@ -1,4 +1,4 @@
-<x-layouts.public :title="$title" :description="$description">
+<x-layouts.public :title="$title" :description="$description" :canonical="$canonical ?? null">
     <div class="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Articles</h1>
 

@@ -57,6 +57,13 @@ server {
         include fastcgi_params;
         fastcgi_read_timeout 120;
         fastcgi_hide_header X-Powered-By;
+        # nginx's fastcgi_params does NOT set this on its own — without it,
+        # PHP's $_SERVER['HTTPS'] is unset even though this whole server
+        # block is TLS-only, so Laravel's request scheme detection (and
+        # therefore route()/canonical URL generation) would think every
+        # request is plain HTTP. See App\Providers\AppServiceProvider's
+        # URL::forceScheme() for the app-side half of this fix.
+        fastcgi_param HTTPS on;
     }
 
     # Deny everything else PHP outside the front controller, and dotfiles.

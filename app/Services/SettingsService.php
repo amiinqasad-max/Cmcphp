@@ -100,4 +100,107 @@ class SettingsService
     {
         return (bool) $this->get('content', 'comments_require_approval', true);
     }
+
+    // ---- Site identity (§7 "General Settings") ----
+
+    public function siteName(): string
+    {
+        return (string) $this->get('general', 'site_name', config('app.name'));
+    }
+
+    public function siteTagline(): ?string
+    {
+        return $this->get('general', 'site_tagline');
+    }
+
+    public function siteDescription(): ?string
+    {
+        return $this->get('general', 'site_description');
+    }
+
+    /** UUID of a `media` row, or null. Resolve with app(SeoService::class) helpers, not directly. */
+    public function siteLogoMediaId(): ?string
+    {
+        return $this->get('general', 'logo_media_id');
+    }
+
+    public function siteFaviconMediaId(): ?string
+    {
+        return $this->get('general', 'favicon_media_id');
+    }
+
+    public function defaultSocialImageMediaId(): ?string
+    {
+        return $this->get('general', 'default_social_image_media_id');
+    }
+
+    // ---- Contact (§7) ----
+
+    public function contactEmail(): ?string
+    {
+        return $this->get('contact', 'email');
+    }
+
+    public function supportEmail(): ?string
+    {
+        return $this->get('contact', 'support_email');
+    }
+
+    public function contactPhone(): ?string
+    {
+        return $this->get('contact', 'phone');
+    }
+
+    public function contactAddress(): ?string
+    {
+        return $this->get('contact', 'address');
+    }
+
+    // ---- Social links (§7) ----
+
+    /**
+     * Platform => URL. Deliberately one JSON map under a single key rather
+     * than one settings row per platform, so a new platform never needs a
+     * migration or a hard-coded field — see §7 "do not hard-code the
+     * platforms into public templates in a way that prevents future
+     * expansion". Blank/absent entries are filtered out.
+     *
+     * @return array<string, string>
+     */
+    public function socialLinks(): array
+    {
+        return array_filter((array) $this->get('social', 'links', []));
+    }
+
+    // ---- SEO defaults (§2, §10) ----
+
+    public function seoDefaultTitle(): ?string
+    {
+        return $this->get('seo', 'default_title');
+    }
+
+    public function seoDefaultDescription(): ?string
+    {
+        return $this->get('seo', 'default_description');
+    }
+
+    public function seoDefaultRobotsIndex(): bool
+    {
+        return (bool) $this->get('seo', 'default_robots_index', true);
+    }
+
+    public function seoDefaultRobotsFollow(): bool
+    {
+        return (bool) $this->get('seo', 'default_robots_follow', true);
+    }
+
+    public function seoDefaultOgImageMediaId(): ?string
+    {
+        return $this->get('seo', 'default_og_image_media_id');
+    }
+
+    public function seoDefaultTwitterCard(): string
+    {
+        return (string) $this->get('seo', 'default_twitter_card', 'summary_large_image');
+    }
 }

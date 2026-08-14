@@ -1,6 +1,6 @@
 # CMCPHP
 
-A custom CMS and content publishing platform built from scratch on **Laravel + Filament + PostgreSQL** — a WordPress alternative purpose-built for article publishing, with a three-video engagement system, first-party analytics, and an AdSense-ready advertisement manager.
+A custom CMS and content publishing platform built from scratch on **Laravel + Filament + PostgreSQL** — a WordPress alternative purpose-built for article publishing, with a three-video engagement system, first-party analytics, an AdSense-ready advertisement manager, admin-managed navigation menus, and a full SEO system (canonical URLs, dynamic sitemap/robots, Open Graph/Twitter cards, JSON-LD).
 
 No WordPress, no PHP CMS packages, no Supabase.
 
@@ -22,6 +22,12 @@ No WordPress, no PHP CMS packages, no Supabase.
 
 ## Status
 
-Being built incrementally, phase by phase (see the roadmap in `docs/ARCHITECTURE.md` §8). Complete: Phase 1 (project setup), Phase 2 (CMS core: Posts/Pages/Categories/Tags/Media), Phase 4 (three-video article system), Phase 5 (reading + video engagement tracking), Phase 6 (completion engine + auto-next), Phase 7 (advertisement manager), Phase 8 (analytics dashboard), Phase 9 (Users/Roles/Permissions/Comments/Activity log), Phase 10 (performance: Redis caching, queues, index audit), Phase 11 (security audit + automated tests), Phase 12 (production deployment config).
+**The full 12-phase roadmap is complete** (see `docs/ARCHITECTURE.md` §8): Phase 1 (project setup), Phase 2 (CMS core: Posts/Pages/Categories/Tags/Media), Phase 3 (menus, full SEO system, sitemap.xml/robots.txt, redirects, general settings), Phase 4 (three-video article system), Phase 5 (reading + video engagement tracking), Phase 6 (completion engine + auto-next), Phase 7 (advertisement manager), Phase 8 (analytics dashboard), Phase 9 (Users/Roles/Permissions/Comments/Activity log), Phase 10 (performance: Redis caching, queues, index audit), Phase 11 (security audit + automated tests), Phase 12 (production deployment config).
 
-Not yet built: **Phase 3** (Menus, full SEO system — sitemap.xml/robots.txt/redirects, Settings admin UI). A minimal `SettingsService` and per-post SEO metadata panel were pulled forward into Phase 2 since Posts/Pages need those to be usable at all, but the dedicated Phase 3 system (menu builder, sitemap/robots generation, redirect manager, and a general settings UI) is still outstanding.
+## Phase 3 highlights
+
+- **Menus**: admin-managed navigation (`/admin/menus`) with unlimited-depth drag-and-drop nesting, arbitrary locations (Primary Navigation/Header/Footer/Mobile Navigation out of the box, more without a code change), and internal-page/post/category or custom-URL items. A menu item pointing at unpublished or deleted content simply stops rendering rather than producing a dead link.
+- **SEO**: a single `SeoService` resolves title/description/canonical/robots/OG/Twitter metadata for every content type through one four-tier fallback (explicit value → content-specific fallback → global setting → safe default), so nothing downstream reimplements fallback logic. Article/breadcrumb/website/organization JSON-LD is generated from real content, never fabricated fields.
+- **Sitemap & robots**: `/sitemap.xml` and `/robots.txt` are real, cached, auto-invalidating routes — never static files an admin has to remember to update.
+- **Redirects**: admin-managed 301/302/307/308 redirects (`/admin/redirects`) with loop detection, a single cached lookup (no per-request DB query), and hit tracking — implemented as a route fallback that structurally cannot shadow the admin panel, API, or auth routes.
+- **Settings**: a centralized `/admin/manage-settings` page (site identity, contact, social links, SEO defaults) built on the same `settings` key/value table the rest of the app already used, not a parallel config store.

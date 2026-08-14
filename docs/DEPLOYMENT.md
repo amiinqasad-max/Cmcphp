@@ -89,12 +89,31 @@ scheduler trigger — see the sections below.
   distro's default `www` pool), `pm.max_children` etc. sized for a
   small/medium VPS — tune to your actual RAM and traffic.
 
+The nginx example's TLS server block also sets `fastcgi_param HTTPS on;` —
+nginx's stock `fastcgi_params` does **not** set this on its own, so without
+it PHP has no way to know the request arrived over TLS even though this
+whole server block is HTTPS-only. `App\Providers\AppServiceProvider` backs
+this up app-side with `URL::forceScheme()` derived from `APP_URL`, so
+generated URLs (canonical links, sitemap entries, OG/Twitter tags — §3)
+are correct either way, but set the nginx line too rather than relying on
+just one half of the fix.
+
 Test and reload after installing:
 
 ```bash
 nginx -t && systemctl reload nginx
 systemctl reload php8.4-fpm
 ```
+
+**A note on `/sitemap.xml` and `/robots.txt`**: both are dynamic Laravel
+routes (`App\Http\Controllers\Public\SitemapController`/`RobotsController`,
+§4/§5), not static files. `try_files $uri $uri/ /index.php?$query_string;`
+in the example config serves any *literal file* under `public/` before it
+ever reaches Laravel — so if a `public/robots.txt` or `public/sitemap.xml`
+file ever gets committed (Laravel's own installer ships a stub
+`public/robots.txt`, since deleted from this repo for exactly this
+reason), it silently shadows the real route forever, on both nginx and
+`php artisan serve`'s dev router. Don't add either file back.
 
 ## Queue workers
 

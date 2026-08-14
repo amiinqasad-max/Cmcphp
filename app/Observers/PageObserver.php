@@ -6,6 +6,8 @@ use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Services\ActivityLogger;
 use App\Services\PublicContentCache;
+use App\Services\SitemapGenerator;
+use Illuminate\Support\Facades\Cache;
 
 class PageObserver
 {
@@ -23,6 +25,7 @@ class PageObserver
     public function saved(Page $page): void
     {
         $this->cache->flushPages();
+        Cache::tags([SitemapGenerator::CACHE_TAG])->flush();
     }
 
     public function updated(Page $page): void
@@ -45,5 +48,6 @@ class PageObserver
     {
         $this->logger->log('page.deleted', $page, ['title' => $page->title]);
         $this->cache->flushPages();
+        Cache::tags([SitemapGenerator::CACHE_TAG])->flush();
     }
 }

@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Services\SitemapGenerator;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class Category extends Model
@@ -31,6 +33,12 @@ class Category extends Model
                 $category->slug = Str::slug($category->name);
             }
         });
+
+        // Categories don't have a dedicated Observer class (no activity log
+        // entry is warranted for them); the sitemap listing is the only
+        // thing that needs invalidating on a category write.
+        static::saved(fn () => Cache::tags([SitemapGenerator::CACHE_TAG])->flush());
+        static::deleted(fn () => Cache::tags([SitemapGenerator::CACHE_TAG])->flush());
     }
 
     public function parent(): BelongsTo

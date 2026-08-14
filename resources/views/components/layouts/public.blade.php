@@ -4,9 +4,25 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    {{-- SEO metadata: pass title/description/canonical/og/jsonLd from the controller/view --}}
-    <x-seo-head :title="$title ?? config('app.name')" :description="$description ?? null" :canonical="$canonical ?? url()->current()"
-        :og-image="$ogImage ?? null" :json-ld="$jsonLd ?? null" />
+    {{-- SEO metadata (§9/§10): App\Services\SeoService already resolved every
+    fallback the controller needs — these are just passed straight through
+    to the render layer, nothing here re-implements fallback logic. --}}
+    <x-seo-head
+        :title="$title ?? config('app.name')"
+        :description="$description ?? null"
+        :canonical="$canonical ?? url()->current()"
+        :robots-index="$robotsIndex ?? true"
+        :robots-follow="$robotsFollow ?? true"
+        :og-title="$ogTitle ?? null"
+        :og-description="$ogDescription ?? null"
+        :og-image="$ogImage ?? null"
+        :og-type="$ogType ?? 'website'"
+        :twitter-card="$twitterCard ?? 'summary_large_image'"
+        :twitter-title="$twitterTitle ?? null"
+        :twitter-description="$twitterDescription ?? null"
+        :twitter-image="$twitterImage ?? null"
+        :json-ld="$jsonLd ?? null"
+    />
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet">
@@ -25,6 +41,18 @@
         Skip to content
     </a>
 
+    {{--
+        §1: nav is driven by the "primary_navigation" / "mobile_navigation"
+        Menu locations (App\View\Components\Menu — cached, admin-managed).
+        A fresh install with no menus configured yet still gets a working
+        nav from the hard-coded fallback below (MenuSeeder creates sensible
+        defaults on `db:seed`, but the fallback keeps this resilient even
+        without it — e.g. a test hitting the layout directly).
+    --}}
+    @php
+        $primaryMenuItems = (new \App\View\Components\Menu('primary_navigation'))->items;
+    @endphp
+
     <header class="border-b border-gray-100">
         <nav aria-label="Primary" class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
             <a href="{{ url('/') }}" class="text-lg font-bold tracking-tight text-gray-900">
@@ -39,18 +67,26 @@
                 </svg>
             </button>
 
-            <ul class="hidden items-center gap-6 text-sm font-medium text-gray-700 md:flex">
-                <li><a href="{{ url('/') }}" class="hover:text-amber-600">Home</a></li>
-                <li><a href="{{ url('/articles') }}" class="hover:text-amber-600">Articles</a></li>
-                <li><a href="{{ url('/search') }}" class="hover:text-amber-600" aria-label="Search">Search</a></li>
-            </ul>
+            @if ($primaryMenuItems && $primaryMenuItems->isNotEmpty())
+                <x-menu location="primary_navigation" class="hidden md:flex" />
+            @else
+                <ul class="hidden items-center gap-6 text-sm font-medium text-gray-700 md:flex">
+                    <li><a href="{{ url('/') }}" class="hover:text-amber-600">Home</a></li>
+                    <li><a href="{{ url('/articles') }}" class="hover:text-amber-600">Articles</a></li>
+                </ul>
+            @endif
         </nav>
 
-        <ul id="mobile-nav" x-ref="mobileNav" class="hidden space-y-1 border-t border-gray-100 px-4 py-3 md:hidden">
-            <li><a href="{{ url('/') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Home</a></li>
-            <li><a href="{{ url('/articles') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Articles</a></li>
-            <li><a href="{{ url('/search') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Search</a></li>
-        </ul>
+        <div id="mobile-nav" x-ref="mobileNav" class="hidden border-t border-gray-100 px-4 py-3 md:hidden">
+            @if ($primaryMenuItems && $primaryMenuItems->isNotEmpty())
+                <x-menu location="primary_navigation" :mobile="true" />
+            @else
+                <ul class="space-y-1">
+                    <li><a href="{{ url('/') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Home</a></li>
+                    <li><a href="{{ url('/articles') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Articles</a></li>
+                </ul>
+            @endif
+        </div>
     </header>
 
     <main id="main-content">
@@ -59,6 +95,16 @@
 
     <footer class="mt-16 border-t border-gray-100 bg-gray-50">
         <div class="mx-auto max-w-5xl px-4 py-10 text-sm text-gray-500 sm:px-6 lg:px-8">
+            <x-menu location="footer" class="mb-6 flex-wrap gap-x-6 gap-y-2 text-gray-600" />
+
+            @if (($links = app(\App\Services\SettingsService::class)->socialLinks()) !== [])
+                <ul class="mb-6 flex flex-wrap gap-4">
+                    @foreach ($links as $platform => $url)
+                        <li><a href="{{ $url }}" class="capitalize hover:text-amber-600" rel="noopener noreferrer" target="_blank">{{ $platform }}</a></li>
+                    @endforeach
+                </ul>
+            @endif
+
             <p>&copy; {{ now()->year }} {{ config('app.name') }}. All rights reserved.</p>
         </div>
     </footer>

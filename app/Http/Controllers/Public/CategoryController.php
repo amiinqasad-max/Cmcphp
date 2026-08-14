@@ -5,12 +5,16 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Services\PublicContentCache;
+use App\Services\SeoService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
 
 class CategoryController extends Controller
 {
-    public function __construct(private readonly PublicContentCache $cache) {}
+    public function __construct(
+        private readonly PublicContentCache $cache,
+        private readonly SeoService $seo,
+    ) {}
 
     public function show(string $slug): View
     {
@@ -26,8 +30,7 @@ class CategoryController extends Controller
         return view('public.categories.show', [
             'category' => $category,
             'posts' => $posts,
-            'title' => $category->seo_title ?: $category->name,
-            'description' => $category->seo_description ?: $category->description,
+            ...$this->seo->forCategory($category),
         ]);
     }
 }

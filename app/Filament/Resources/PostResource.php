@@ -240,6 +240,20 @@ class PostResource extends Resource
                             Forms\Components\TextInput::make('og_title')->label('OG title')->maxLength(255),
                             Forms\Components\TextInput::make('og_description')->label('OG description')->maxLength(255),
                             MediaSelectField::make('og_image_media_id', 'ogImage', 'OG image'),
+                            Forms\Components\Select::make('twitter_card')
+                                ->label('Twitter/X card type')
+                                ->options(['summary' => 'Summary', 'summary_large_image' => 'Summary with large image'])
+                                ->default('summary_large_image'),
+                            Forms\Components\TextInput::make('twitter_title')
+                                ->label('Twitter/X title')
+                                ->maxLength(255)
+                                ->helperText('Falls back to the OG title, then the SEO title, if left blank.'),
+                            Forms\Components\TextInput::make('twitter_description')
+                                ->label('Twitter/X description')
+                                ->maxLength(255)
+                                ->helperText('Falls back to the OG description, then the meta description, if left blank.'),
+                            MediaSelectField::make('twitter_image_media_id', 'twitterImage', 'Twitter/X image')
+                                ->helperText('Falls back to the OG image if left blank.'),
                         ]),
                 ]),
         ])->columns(3);

@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Services\AdPlacementResolver;
 use App\Services\ArticleContentRenderer;
 use App\Services\PublicContentCache;
+use App\Services\SeoService;
 use App\Services\SettingsService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
@@ -18,6 +19,7 @@ class ArticleController extends Controller
         private readonly AdPlacementResolver $adPlacementResolver,
         private readonly SettingsService $settings,
         private readonly PublicContentCache $cache,
+        private readonly SeoService $seo,
     ) {}
 
     public function index(): View
@@ -33,13 +35,14 @@ class ArticleController extends Controller
             'posts' => $posts,
             'title' => 'Articles — '.config('app.name'),
             'description' => 'The latest articles.',
+            'canonical' => route('articles.index'),
         ]);
     }
 
     public function show(string $slug): View
     {
         $post = Post::published()
-            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage', 'videos.media.thumbnail', 'approvedTopLevelComments'])
+            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage', 'seo.twitterImage', 'videos.media.thumbnail', 'approvedTopLevelComments'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -53,30 +56,12 @@ class ArticleController extends Controller
             ->limit(3)
             ->get();
 
-        $ogImage = $post->seo?->ogImage?->url ?: $post->featuredImage?->url;
-
         return view('public.articles.show', [
             'post' => $post,
             'blocks' => $blocks,
             'related' => $related,
             'commentsEnabled' => $this->settings->commentsEnabled(),
-            'title' => $post->seo?->seo_title ?: $post->title,
-            'description' => $post->seo?->meta_description ?: $post->excerpt,
-            'canonical' => $post->seo?->canonical_url ?: route('articles.show', $post),
-            'ogImage' => $ogImage,
-            'jsonLd' => [
-                '@context' => 'https://schema.org',
-                '@type' => 'Article',
-                'headline' => $post->title,
-                'description' => $post->excerpt,
-                'image' => $ogImage ? [$ogImage] : [],
-                'datePublished' => $post->published_at?->toIso8601String(),
-                'dateModified' => $post->updated_at?->toIso8601String(),
-                'author' => [
-                    '@type' => 'Person',
-                    'name' => $post->author?->name,
-                ],
-            ],
+            ...$this->seo->forPost($post),
         ]);
     }
 }

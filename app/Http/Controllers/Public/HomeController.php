@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Services\PublicContentCache;
+use App\Services\SeoService;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    public function __construct(private readonly PublicContentCache $cache) {}
+    public function __construct(
+        private readonly PublicContentCache $cache,
+        private readonly SeoService $seo,
+    ) {}
 
     public function __invoke(): View
     {
@@ -21,8 +25,7 @@ class HomeController extends Controller
 
         return view('public.home', [
             'posts' => $posts,
-            'title' => config('app.name').' — '.config('app.tagline', 'A modern content platform'),
-            'description' => 'A fast, SEO-friendly content platform built on Laravel and Filament.',
+            ...$this->seo->forHome(),
         ]);
     }
 }

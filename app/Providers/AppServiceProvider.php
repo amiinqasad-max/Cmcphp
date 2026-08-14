@@ -15,6 +15,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -32,6 +33,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // §3 canonical URLs: generated URLs (route()/url(), and therefore
+        // every canonical/OG/sitemap link) always match APP_URL's own
+        // scheme, regardless of what scheme the incoming request arrived
+        // on. Without this, a app running behind a proxy that doesn't
+        // forward HTTPS detection correctly (see deploy/nginx's
+        // `fastcgi_param HTTPS on`) could silently generate http:// canonical
+        // links on an https:// site.
+        if ($scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME)) {
+            URL::forceScheme($scheme);
+        }
+
         RateLimiter::for('tracking', function (Request $request) {
             $key = $request->attributes->get('anonymous_session_id') ?: $request->ip();
 

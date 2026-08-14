@@ -1,4 +1,7 @@
-<x-layouts.public :title="$title" :description="$description" :canonical="$canonical">
+<x-layouts.public :title="$title" :description="$description" :canonical="$canonical"
+    :robots-index="$robotsIndex ?? true" :robots-follow="$robotsFollow ?? true"
+    :og-title="$ogTitle ?? null" :og-description="$ogDescription ?? null" :og-image="$ogImage ?? null" :og-type="$ogType ?? 'website'"
+    :twitter-card="$twitterCard ?? 'summary_large_image'" :json-ld="$jsonLd ?? null">
     <article class="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
         <h1 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">{{ $page->title }}</h1>
 

@@ -5,12 +5,16 @@ namespace App\Http\Controllers\Public;
 use App\Http\Controllers\Controller;
 use App\Models\Tag;
 use App\Services\PublicContentCache;
+use App\Services\SeoService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
 
 class TagController extends Controller
 {
-    public function __construct(private readonly PublicContentCache $cache) {}
+    public function __construct(
+        private readonly PublicContentCache $cache,
+        private readonly SeoService $seo,
+    ) {}
 
     public function show(string $slug): View
     {
@@ -26,8 +30,7 @@ class TagController extends Controller
         return view('public.tags.show', [
             'tag' => $tag,
             'posts' => $posts,
-            'title' => $tag->seo_title ?: "#{$tag->name}",
-            'description' => $tag->seo_description ?: $tag->description,
+            ...$this->seo->forTag($tag),
         ]);
     }
 }

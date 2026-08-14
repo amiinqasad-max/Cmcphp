@@ -1,4 +1,8 @@
-<x-layouts.public :title="$title" :description="$description" :canonical="$canonical" :og-image="$ogImage" :json-ld="$jsonLd">
+<x-layouts.public :title="$title" :description="$description" :canonical="$canonical"
+    :robots-index="$robotsIndex ?? true" :robots-follow="$robotsFollow ?? true"
+    :og-title="$ogTitle ?? null" :og-description="$ogDescription ?? null" :og-image="$ogImage" :og-type="$ogType ?? 'article'"
+    :twitter-card="$twitterCard ?? 'summary_large_image'" :twitter-title="$twitterTitle ?? null"
+    :twitter-description="$twitterDescription ?? null" :twitter-image="$twitterImage ?? null" :json-ld="$jsonLd">
     <article class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8" data-track-post-id="{{ $post->id }}">
         <nav aria-label="Breadcrumb" class="mb-6 text-sm text-gray-500">
             <ol class="flex flex-wrap items-center gap-1">

@@ -47,10 +47,28 @@ class PageResource extends Resource
                         ]),
                     Forms\Components\Section::make('SEO')
                         ->collapsible()
+                        ->collapsed()
+                        ->relationship('seo')
+                        ->columns(2)
                         ->schema([
-                            Forms\Components\TextInput::make('seo_title')->maxLength(255),
-                            Forms\Components\TextInput::make('seo_description')->maxLength(255),
+                            Forms\Components\TextInput::make('seo_title')->maxLength(255)->columnSpanFull(),
+                            Forms\Components\TextInput::make('meta_description')->maxLength(255)->columnSpanFull(),
                             Forms\Components\TextInput::make('canonical_url')->url()->maxLength(255),
+                            Forms\Components\Select::make('schema_type')
+                                ->options(['website' => 'Website', 'article' => 'Article', 'organization' => 'Organization', 'none' => 'None'])
+                                ->default('website'),
+                            Forms\Components\Toggle::make('robots_index')->label('Indexable (robots: index)')->default(true),
+                            Forms\Components\Toggle::make('robots_follow')->label('Follow links (robots: follow)')->default(true),
+                            Forms\Components\TextInput::make('og_title')->label('OG title')->maxLength(255),
+                            Forms\Components\TextInput::make('og_description')->label('OG description')->maxLength(255),
+                            MediaSelectField::make('og_image_media_id', 'ogImage', 'OG image'),
+                            Forms\Components\Select::make('twitter_card')
+                                ->label('Twitter/X card type')
+                                ->options(['summary' => 'Summary', 'summary_large_image' => 'Summary with large image'])
+                                ->default('summary_large_image'),
+                            Forms\Components\TextInput::make('twitter_title')->label('Twitter/X title')->maxLength(255),
+                            Forms\Components\TextInput::make('twitter_description')->label('Twitter/X description')->maxLength(255),
+                            MediaSelectField::make('twitter_image_media_id', 'twitterImage', 'Twitter/X image'),
                         ]),
                 ]),
             Forms\Components\Group::make()

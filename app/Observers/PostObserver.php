@@ -6,6 +6,8 @@ use App\Enums\PostStatus;
 use App\Models\Post;
 use App\Services\ActivityLogger;
 use App\Services\PublicContentCache;
+use App\Services\SitemapGenerator;
+use Illuminate\Support\Facades\Cache;
 
 class PostObserver
 {
@@ -23,6 +25,7 @@ class PostObserver
     public function saved(Post $post): void
     {
         $this->cache->flushPosts();
+        Cache::tags([SitemapGenerator::CACHE_TAG])->flush();
     }
 
     public function updated(Post $post): void
@@ -45,5 +48,6 @@ class PostObserver
     {
         $this->logger->log('post.deleted', $post, ['title' => $post->title]);
         $this->cache->flushPosts();
+        Cache::tags([SitemapGenerator::CACHE_TAG])->flush();
     }
 }

@@ -9,6 +9,9 @@ use App\Http\Controllers\Public\CategoryController;
 use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Public\RedirectController;
+use App\Http\Controllers\Public\RobotsController;
+use App\Http\Controllers\Public\SitemapController;
 use App\Http\Controllers\Public\TagController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,6 +23,9 @@ Route::middleware('cache.public')->group(function () {
     Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
     Route::get('/tag/{slug}', [TagController::class, 'show'])->name('tags.show');
     Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+
+    Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+    Route::get('/robots.txt', RobotsController::class)->name('robots');
 });
 
 Route::post('/comments', [CommentController::class, 'store'])
@@ -43,3 +49,9 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// §6: admin-managed redirects. Route::fallback() only ever runs after every
+// other route in the application — including the Filament admin panel's
+// own routes, registered separately by AdminPanelProvider — has failed to
+// match, so this can never shadow /admin, /api/track/*, or auth routes.
+Route::fallback(RedirectController::class)->name('redirects.fallback');
