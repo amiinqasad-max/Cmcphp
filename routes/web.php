@@ -1,10 +1,20 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Public\ArticleController;
+use App\Http\Controllers\Public\CategoryController;
 use App\Http\Controllers\Public\HomeController;
+use App\Http\Controllers\Public\PageController;
+use App\Http\Controllers\Public\TagController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
+Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/tag/{slug}', [TagController::class, 'show'])->name('tags.show');
+Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

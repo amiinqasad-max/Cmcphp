@@ -9,6 +9,7 @@
         "php": "^8.2",
         "bezhansalleh/filament-shield": "^3.9",
         "filament/filament": "^3.2",
+        "james-heinrich/getid3": "^1.9",
         "laravel/breeze": "^2.4",
         "laravel/framework": "^11.31",
         "laravel/tinker": "^2.9",

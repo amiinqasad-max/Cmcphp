@@ -4,9 +4,23 @@
             {{ config('app.name') }}
         </h1>
         <p class="mt-4 max-w-2xl text-base leading-7 text-gray-600">
-            The publishing platform is being built out phase by phase — see
-            <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm">docs/ARCHITECTURE.md</code>
-            for the full roadmap. Article listings, categories, and search land in Phase 2.
+            The latest articles, hand-picked and freshly published.
         </p>
+
+        @if ($posts->isEmpty())
+            <p class="mt-12 text-gray-500">No articles published yet — check back soon.</p>
+        @else
+            <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($posts as $post)
+                    <x-article-card :post="$post" />
+                @endforeach
+            </div>
+
+            <div class="mt-10">
+                <a href="{{ route('articles.index') }}" class="text-sm font-semibold text-amber-600 hover:underline">
+                    View all articles &rarr;
+                </a>
+            </div>
+        @endif
     </section>
 </x-layouts.public>

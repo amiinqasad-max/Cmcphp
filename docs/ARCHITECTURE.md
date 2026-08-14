@@ -541,3 +541,13 @@ Permissions are enforced through Filament's `shield()`/Policy integration — ev
 | 12 | Production deployment: Nginx/PHP-FPM/Postgres/Redis/workers/scheduler, SSL, backups |
 
 This document is the reference for all subsequent phases; settings referenced throughout (`completion thresholds`, `auto-next delay`, `max ads per article`, `spacing`, etc.) are implemented as rows in `settings`, never hard-coded, per section 54.
+
+---
+
+## Implementation notes (updated as phases land)
+
+**Phase 2 (CMS core):**
+- `posts.content` / `pages.content` are stored as sanitized **HTML** (produced by Filament's RichEditor, which is TipTap-based) rather than a raw TipTap JSON document. The three-video-in-content system (Phase 4) will use lightweight position markers tied to `post_videos.position` rather than a custom JSON schema — simpler and equally robust for a single-author-tool editing model.
+- `seo_metadata` (originally scoped to Phase 3) was pulled forward into Phase 2 because Posts/Pages need a working SEO panel to be usable at all. Phase 3 builds the *system* around it: sitemap/robots generation, redirects, and a shared `SeoService` for resolving effective metadata with defaults.
+- Filament Shield's `shield:generate` writes Policy **files** to disk (committed to git) but Permission **rows** only exist in whatever database you ran it against. `database/seeders/PermissionSeeder.php` regenerates those rows (`--option=permissions`, so it never touches the hand-tuned Policy classes) — it's part of `db:seed`, so permissions exist reproducibly in every environment (fresh dev DB, CI, production). Re-run `db:seed --class=PermissionSeeder` (or full `db:seed`) after any phase adds new Filament resources.
+- PostgreSQL note: a chained `$table->uuid('id')->primary()` compiles to a *trailing* `ALTER TABLE ADD PRIMARY KEY`, which runs after `foreign()` commands — this breaks self-referencing foreign keys (`media.thumbnail_media_id`, `categories.parent_id`, `posts.next_article_id`) with "no unique constraint matching given keys". Fix used throughout: declare the column with `$table->uuid('id')` (no chained `->primary()`), then call `$table->primary('id')` explicitly *before* the self-referencing `foreign()` call in the same migration.

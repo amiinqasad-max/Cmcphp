@@ -3,17 +3,21 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\Post;
 use Illuminate\View\View;
 
 class HomeController extends Controller
 {
-    /**
-     * Public homepage. Post listings are wired up in Phase 2 (CMS core);
-     * this currently renders the base public layout as a placeholder.
-     */
     public function __invoke(): View
     {
+        $posts = Post::published()
+            ->with(['category', 'author', 'featuredImage'])
+            ->latest('published_at')
+            ->limit(9)
+            ->get();
+
         return view('public.home', [
+            'posts' => $posts,
             'title' => config('app.name').' — '.config('app.tagline', 'A modern content platform'),
             'description' => 'A fast, SEO-friendly content platform built on Laravel and Filament.',
         ]);

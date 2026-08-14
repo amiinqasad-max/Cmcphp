@@ -18,7 +18,8 @@ php artisan key:generate
 createdb cmcphp
 
 php artisan migrate
-php artisan db:seed   # creates roles + a super_admin user (admin@cmcphp.test / password)
+php artisan storage:link   # only needed if FILESYSTEM_DISK=public (local dev without S3/R2 credentials)
+php artisan db:seed   # regenerates Filament Shield permissions, roles, and a super_admin user (admin@cmcphp.test / password)
 
 npm install
 npm run build   # or `npm run dev` while developing
@@ -27,6 +28,8 @@ npm run build   # or `npm run dev` while developing
 Then serve the app (`php artisan serve` or your webserver of choice) and:
 - Public site: `/`
 - Admin panel: `/admin` — log in with the seeded super admin above (change the password immediately in any shared environment).
+
+Re-run `php artisan db:seed --class=PermissionSeeder` after adding new Filament resources, so their generated permissions actually exist in the database (see `docs/ARCHITECTURE.md`'s Phase 2 implementation notes for why this is a separate step from `shield:generate`).
 
 ## Queues & Scheduler
 
@@ -48,6 +51,6 @@ php artisan test
 
 ## Object storage
 
-`FILESYSTEM_DISK=s3` is the default and works with AWS S3, Cloudflare R2, or any S3-compatible provider — set `AWS_ENDPOINT` (and `AWS_USE_PATH_STYLE_ENDPOINT=true` for R2/MinIO) alongside the usual `AWS_*` credentials. For local development without a bucket, set `FILESYSTEM_DISK=local`.
+Set `FILESYSTEM_DISK=s3` (with `AWS_ENDPOINT` + the usual `AWS_*` credentials — add `AWS_USE_PATH_STYLE_ENDPOINT=true` for R2/MinIO) for staging/production; it works with AWS S3, Cloudflare R2, or any S3-compatible provider. Locally without bucket credentials, `.env` defaults to `FILESYSTEM_DISK=public`, which writes to `storage/app/public` (served via the `php artisan storage:link` symlink).
 
 See `docs/ARCHITECTURE.md` for the full system design and phased roadmap.

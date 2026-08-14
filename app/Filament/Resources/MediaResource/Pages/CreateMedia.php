@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Filament\Resources\MediaResource\Pages;
+
+use App\Filament\Resources\MediaResource;
+use Filament\Resources\Pages\CreateRecord;
+
+class CreateMedia extends CreateRecord
+{
+    protected static string $resource = MediaResource::class;
+
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $data['disk'] = config('filesystems.default');
+        $data['uploaded_by'] = auth()->id();
+
+        return $data;
+    }
+}
