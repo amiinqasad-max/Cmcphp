@@ -2,17 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Enums\PostStatus;
-use App\Models\Post;
+use App\Models\ActivityLog;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 
-/**
- * Recently published/updated articles — a lightweight stand-in for a full
- * admin activity log, which is Phase 9 scope (activity_logs table). Swap
- * this widget's query for that table once it lands.
- */
 class RecentActivityWidget extends BaseWidget
 {
     protected static ?int $sort = 5;
@@ -26,14 +20,14 @@ class RecentActivityWidget extends BaseWidget
     public function table(Table $table): Table
     {
         return $table
-            ->query(Post::query()->latest('updated_at')->limit(10))
+            ->query(ActivityLog::query()->with('user')->latest('created_at')->limit(15))
             ->columns([
-                Tables\Columns\TextColumn::make('title')->limit(50),
-                Tables\Columns\TextColumn::make('author.name'),
-                Tables\Columns\TextColumn::make('status')->badge()
-                    ->formatStateUsing(fn (PostStatus $state) => $state->label())
-                    ->color(fn (PostStatus $state) => $state->color()),
-                Tables\Columns\TextColumn::make('updated_at')->since()->label('Last updated'),
+                Tables\Columns\TextColumn::make('created_at')->since()->label('When'),
+                Tables\Columns\TextColumn::make('user.name')->label('User')->default('System'),
+                Tables\Columns\TextColumn::make('action')->badge(),
+                Tables\Columns\TextColumn::make('subject_type')
+                    ->label('Resource')
+                    ->formatStateUsing(fn (?string $state) => $state ? class_basename($state) : '—'),
             ])
             ->paginated(false);
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Tracking\EngagementEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\CategoryController;
+use App\Http\Controllers\Public\CommentController;
 use App\Http\Controllers\Public\HomeController;
 use App\Http\Controllers\Public\PageController;
 use App\Http\Controllers\Public\TagController;
@@ -18,6 +19,10 @@ Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articl
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/tag/{slug}', [TagController::class, 'show'])->name('tags.show');
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+
+Route::post('/comments', [CommentController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('comments.store');
 
 Route::middleware('throttle:tracking')->prefix('api/track')->name('api.track.')->group(function () {
     Route::post('/events', [EngagementEventController::class, 'store'])->name('events');

@@ -88,4 +88,16 @@ class SettingsService
     {
         return (array) $this->get('ads', 'excluded_post_ids', []);
     }
+
+    // ---- Content / comments (§31, §32) ----
+
+    public function commentsEnabled(): bool
+    {
+        return (bool) $this->get('content', 'comments_enabled', true);
+    }
+
+    public function commentsRequireApproval(): bool
+    {
+        return (bool) $this->get('content', 'comments_require_approval', true);
+    }
 }

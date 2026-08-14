@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Services\AdPlacementResolver;
 use App\Services\ArticleContentRenderer;
+use App\Services\SettingsService;
 use Illuminate\View\View;
 
 class ArticleController extends Controller
@@ -13,6 +14,7 @@ class ArticleController extends Controller
     public function __construct(
         private readonly ArticleContentRenderer $contentRenderer,
         private readonly AdPlacementResolver $adPlacementResolver,
+        private readonly SettingsService $settings,
     ) {}
 
     public function index(): View
@@ -32,7 +34,7 @@ class ArticleController extends Controller
     public function show(string $slug): View
     {
         $post = Post::published()
-            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage', 'videos.media.thumbnail'])
+            ->with(['category', 'author', 'featuredImage', 'tags', 'seo.ogImage', 'videos.media.thumbnail', 'approvedTopLevelComments'])
             ->where('slug', $slug)
             ->firstOrFail();
 
@@ -52,6 +54,7 @@ class ArticleController extends Controller
             'post' => $post,
             'blocks' => $blocks,
             'related' => $related,
+            'commentsEnabled' => $this->settings->commentsEnabled(),
             'title' => $post->seo?->seo_title ?: $post->title,
             'description' => $post->seo?->meta_description ?: $post->excerpt,
             'canonical' => $post->seo?->canonical_url ?: route('articles.show', $post),

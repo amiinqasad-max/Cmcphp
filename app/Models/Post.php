@@ -129,6 +129,16 @@ class Post extends Model
         return $this->hasMany(AdPlacement::class)->orderBy('position_order');
     }
 
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class);
+    }
+
+    public function approvedTopLevelComments(): HasMany
+    {
+        return $this->comments()->approved()->whereNull('parent_id')->with('replies.user');
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', PostStatus::Published)

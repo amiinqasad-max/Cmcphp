@@ -15,7 +15,8 @@ use Spatie\Permission\Models\Role;
  * - admin gets every permission that exists at the time this seeder runs
  *   (including ones added by later phases, since it re-syncs from the DB).
  * - editor gets full content management (posts/pages/categories/tags/media/
- *   ad slots — "Manage ads", §30) but not user/role management. Ad
+ *   ad slots — "Manage ads"/comments — "Manage comments", §30) but not
+ *   user/role management or the activity log (admin/super_admin only). Ad
  *   *placements* are edited inline on the post form and are governed by
  *   the post's own update permission, so they don't need a separate grant.
  * - author gets create/update on their own posts only (enforced by
@@ -30,7 +31,7 @@ class RoleSeeder extends Seeder
     // Note: Filament Shield names multi-word resources with "::" (e.g. "ad::slot"
     // for the AdSlot model), not snake_case — verified against the actual
     // generated permission rows rather than assumed.
-    private const CONTENT_RESOURCES = ['post', 'page', 'category', 'tag', 'media', 'ad::slot'];
+    private const CONTENT_RESOURCES = ['post', 'page', 'category', 'tag', 'media', 'ad::slot', 'comment'];
 
     private const EDITOR_ABILITIES = ['view_any', 'view', 'create', 'update', 'delete', 'replicate', 'restore', 'restore_any'];
 

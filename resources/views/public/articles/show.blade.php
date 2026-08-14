@@ -79,4 +79,81 @@
             </div>
         </section>
     @endif
+
+    @if ($commentsEnabled)
+        <section class="mx-auto max-w-3xl border-t border-gray-100 px-4 py-12 sm:px-6 lg:px-8" aria-labelledby="comments-heading">
+            <h2 id="comments-heading" class="text-xl font-semibold text-gray-900">
+                Comments ({{ $post->approvedTopLevelComments->count() }})
+            </h2>
+
+            @if (session('status'))
+                <p class="mt-4 rounded-md bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{{ session('status') }}</p>
+            @endif
+
+            <form method="POST" action="{{ route('comments.store') }}" class="mt-6 space-y-4">
+                @csrf
+                <input type="hidden" name="post_id" value="{{ $post->id }}">
+
+                @auth
+                    <p class="text-sm text-gray-600">Commenting as <span class="font-medium">{{ auth()->user()->name }}</span></p>
+                @else
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="author_name" class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" name="author_name" id="author_name" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                            @error('author_name') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="author_email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <input type="email" name="author_email" id="author_email" required
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500">
+                            @error('author_email') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+                @endauth
+
+                <div>
+                    <label for="body" class="block text-sm font-medium text-gray-700">Comment</label>
+                    <textarea name="body" id="body" rows="4" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"></textarea>
+                    @error('body') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                </div>
+
+                <button type="submit" class="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700">
+                    Post comment
+                </button>
+            </form>
+
+            <ul class="mt-10 space-y-6">
+                @forelse ($post->approvedTopLevelComments as $comment)
+                    <li>
+                        <div class="flex items-baseline gap-2">
+                            <span class="font-medium text-gray-900">{{ $comment->authorDisplayName() }}</span>
+                            <time class="text-xs text-gray-500" datetime="{{ $comment->created_at->toIso8601String() }}">
+                                {{ $comment->created_at->diffForHumans() }}
+                            </time>
+                        </div>
+                        <p class="mt-1 text-gray-700">{{ $comment->body }}</p>
+
+                        @if ($comment->replies->isNotEmpty())
+                            <ul class="mt-4 space-y-4 border-l border-gray-100 pl-4">
+                                @foreach ($comment->replies as $reply)
+                                    <li>
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="font-medium text-gray-900">{{ $reply->authorDisplayName() }}</span>
+                                            <time class="text-xs text-gray-500">{{ $reply->created_at->diffForHumans() }}</time>
+                                        </div>
+                                        <p class="mt-1 text-gray-700">{{ $reply->body }}</p>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </li>
+                @empty
+                    <li class="text-sm text-gray-500">No comments yet — be the first to share your thoughts.</li>
+                @endforelse
+            </ul>
+        </section>
+    @endif
 </x-layouts.public>
