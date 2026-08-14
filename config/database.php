@@ -168,6 +168,18 @@ return [
             'database' => env('REDIS_CACHE_DB', '1'),
         ],
 
+        // Kept on its own logical DB (REDIS_QUEUE_DB) so a `FLUSHDB`-style
+        // cache clear, or heavy cache churn, can never touch in-flight jobs
+        // — see queue.connections.redis.connection in config/queue.php.
+        'queue' => [
+            'url' => env('REDIS_URL'),
+            'host' => env('REDIS_HOST', '127.0.0.1'),
+            'username' => env('REDIS_USERNAME'),
+            'password' => env('REDIS_PASSWORD'),
+            'port' => env('REDIS_PORT', '6379'),
+            'database' => env('REDIS_QUEUE_DB', '2'),
+        ],
+
     ],
 
 ];

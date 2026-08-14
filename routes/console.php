@@ -10,3 +10,9 @@ Artisan::command('inspire', function () {
 
 // Rolls yesterday's activity into daily_rollups every night (§39).
 Schedule::command('analytics:aggregate')->dailyAt('01:00');
+
+// Prunes raw tracking events already captured in daily_rollups (§39).
+Schedule::command('tracking:prune')->dailyAt('02:00');
+
+// Publishes scheduled posts whose published_at has arrived (§4, §39).
+Schedule::command('posts:publish-scheduled')->everyFiveMinutes();

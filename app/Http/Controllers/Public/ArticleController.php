@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Post;
 use App\Services\AdPlacementResolver;
 use App\Services\ArticleContentRenderer;
+use App\Services\PublicContentCache;
 use App\Services\SettingsService;
+use Illuminate\Pagination\Paginator;
 use Illuminate\View\View;
 
 class ArticleController extends Controller
@@ -15,14 +17,17 @@ class ArticleController extends Controller
         private readonly ArticleContentRenderer $contentRenderer,
         private readonly AdPlacementResolver $adPlacementResolver,
         private readonly SettingsService $settings,
+        private readonly PublicContentCache $cache,
     ) {}
 
     public function index(): View
     {
-        $posts = Post::published()
+        $page = Paginator::resolveCurrentPage() ?: 1;
+
+        $posts = $this->cache->rememberPosts("articles.index.page.{$page}", fn () => Post::published()
             ->with(['category', 'author', 'featuredImage'])
             ->latest('published_at')
-            ->paginate(12);
+            ->paginate(12));
 
         return view('public.articles.index', [
             'posts' => $posts,

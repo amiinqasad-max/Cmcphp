@@ -5,14 +5,24 @@ namespace App\Observers;
 use App\Enums\PostStatus;
 use App\Models\Post;
 use App\Services\ActivityLogger;
+use App\Services\PublicContentCache;
 
 class PostObserver
 {
-    public function __construct(private readonly ActivityLogger $logger) {}
+    public function __construct(
+        private readonly ActivityLogger $logger,
+        private readonly PublicContentCache $cache,
+    ) {}
 
     public function created(Post $post): void
     {
         $this->logger->log('post.created', $post, ['title' => $post->title]);
+    }
+
+    /** Fires on both create and update — the one place listing caches get invalidated. */
+    public function saved(Post $post): void
+    {
+        $this->cache->flushPosts();
     }
 
     public function updated(Post $post): void
@@ -34,5 +44,6 @@ class PostObserver
     public function deleted(Post $post): void
     {
         $this->logger->log('post.deleted', $post, ['title' => $post->title]);
+        $this->cache->flushPosts();
     }
 }

@@ -21,7 +21,13 @@
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="CACHE_STORE" value="array"/>
+        <!-- Real Redis (isolated DB numbers), not the array store: cache
+             tag-based invalidation (Cache::tags(...)->flush()) isn't
+             supported by ArrayStore, and testing against the real driver
+             matches this project's Postgres-not-SQLite testing philosophy. -->
+        <env name="CACHE_STORE" value="redis"/>
+        <env name="REDIS_CACHE_DB" value="15"/>
+        <env name="REDIS_QUEUE_DB" value="14"/>
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_DATABASE" value="cmcphp_test"/>
         <env name="MAIL_MAILER" value="array"/>

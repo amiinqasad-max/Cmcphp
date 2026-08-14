@@ -5,14 +5,24 @@ namespace App\Observers;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Services\ActivityLogger;
+use App\Services\PublicContentCache;
 
 class PageObserver
 {
-    public function __construct(private readonly ActivityLogger $logger) {}
+    public function __construct(
+        private readonly ActivityLogger $logger,
+        private readonly PublicContentCache $cache,
+    ) {}
 
     public function created(Page $page): void
     {
         $this->logger->log('page.created', $page, ['title' => $page->title]);
+    }
+
+    /** Fires on both create and update — the one place the pages cache gets invalidated. */
+    public function saved(Page $page): void
+    {
+        $this->cache->flushPages();
     }
 
     public function updated(Page $page): void
@@ -34,5 +44,6 @@ class PageObserver
     public function deleted(Page $page): void
     {
         $this->logger->log('page.deleted', $page, ['title' => $page->title]);
+        $this->cache->flushPages();
     }
 }

@@ -4,13 +4,16 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Services\PublicContentCache;
 use Illuminate\View\View;
 
 class PageController extends Controller
 {
+    public function __construct(private readonly PublicContentCache $cache) {}
+
     public function show(string $slug): View
     {
-        $page = Page::published()->where('slug', $slug)->firstOrFail();
+        $page = $this->cache->rememberPages("pages.{$slug}", fn () => Page::published()->where('slug', $slug)->firstOrFail());
 
         return view('public.pages.show', [
             'page' => $page,
