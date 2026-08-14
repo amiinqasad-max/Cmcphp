@@ -1,5 +1,5 @@
 <x-layouts.public :title="$title" :description="$description" :canonical="$canonical" :og-image="$ogImage" :json-ld="$jsonLd">
-    <article class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
+    <article class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8" data-track-post-id="{{ $post->id }}">
         <nav aria-label="Breadcrumb" class="mb-6 text-sm text-gray-500">
             <ol class="flex flex-wrap items-center gap-1">
                 <li><a href="{{ route('home') }}" class="hover:underline">Home</a></li>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Tracking\EngagementEventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Public\ArticleController;
 use App\Http\Controllers\Public\CategoryController;
@@ -15,6 +16,10 @@ Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articl
 Route::get('/category/{slug}', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/tag/{slug}', [TagController::class, 'show'])->name('tags.show');
 Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+
+Route::middleware('throttle:tracking')->prefix('api/track')->name('api.track.')->group(function () {
+    Route::post('/events', [EngagementEventController::class, 'store'])->name('events');
+});
 
 Route::get('/dashboard', function () {
     return view('dashboard');

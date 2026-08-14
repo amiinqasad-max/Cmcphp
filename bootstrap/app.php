@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureAnonymousSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -11,7 +12,18 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        $middleware->web(append: [
+            EnsureAnonymousSession::class,
+        ]);
+
+        // Tracking-ingestion endpoints are called via `fetch`/`sendBeacon`,
+        // which cannot attach a CSRF header. SameSite=Lax on the session
+        // cookie already blocks cross-site fetch/XHR from carrying it, and
+        // the endpoints are additionally rate-limited and strictly
+        // payload-validated (§34/§46) — see routes/web.php's api/track group.
+        $middleware->validateCsrfTokens(except: [
+            'api/track/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
