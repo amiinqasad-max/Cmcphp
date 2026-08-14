@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureAnonymousSession;
 use App\Http\Middleware\SetPublicCacheHeaders;
+use App\Http\Middleware\SetSecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             EnsureAnonymousSession::class,
         ]);
+
+        // Global (not ->web()-scoped): Filament's admin panel runs its own
+        // explicit middleware pipeline rather than inheriting the 'web'
+        // group, so security headers need the true global stack to reach
+        // /admin too.
+        $middleware->append(SetSecurityHeaders::class);
 
         $middleware->alias([
             'cache.public' => SetPublicCacheHeaders::class,

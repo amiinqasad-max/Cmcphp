@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\NextArticleMode;
 use App\Enums\PostStatus;
 use App\Models\Concerns\HasSeoMetadata;
+use App\Models\Concerns\SanitizesContentHtml;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,7 +18,7 @@ use Illuminate\Support\Str;
 
 class Post extends Model
 {
-    use HasFactory, HasSeoMetadata, HasUuids, SoftDeletes;
+    use HasFactory, HasSeoMetadata, HasUuids, SanitizesContentHtml, SoftDeletes;
 
     /** Average adult silent reading speed, used for the reading-time estimate. */
     private const WORDS_PER_MINUTE = 200;
