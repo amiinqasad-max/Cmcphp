@@ -3,12 +3,17 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\ManageSettings;
+use App\Models\Category;
+use App\Models\Post;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\AdPlacementResolver;
+use App\Services\ArticleContentRenderer;
 use App\Services\SettingsService;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class SettingsTest extends TestCase
@@ -115,5 +120,59 @@ class SettingsTest extends TestCase
             "make('adsense",
             strtolower(file_get_contents(app_path('Filament/Pages/ManageSettings.php')))
         );
+    }
+
+    /**
+     * Priority 2 gap fix: ads.* settings (existed on SettingsService since
+     * Phase 7) previously had no admin UI at all — only reachable via
+     * SettingsService::set() directly.
+     */
+    public function test_ad_placement_settings_can_be_saved_through_the_settings_page(): void
+    {
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $this->actingAs($admin);
+
+        $category = Category::factory()->create();
+
+        Livewire::test(ManageSettings::class)
+            ->fillForm([
+                'ads' => [
+                    'auto_placement_enabled' => false,
+                    'max_ads_per_article' => 3,
+                    'min_paragraph_spacing' => 6,
+                    'min_paragraphs_required' => 2,
+                    'excluded_category_ids' => [$category->id],
+                    'excluded_post_ids' => [],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $settings = app(SettingsService::class);
+        $this->assertFalse($settings->adsAutoPlacementEnabled());
+        $this->assertSame(3, $settings->maxAdsPerArticle());
+        $this->assertSame(6, $settings->minParagraphSpacing());
+        $this->assertSame(2, $settings->minParagraphsRequiredForAds());
+        $this->assertSame([$category->id], $settings->excludedAdCategoryIds());
+    }
+
+    public function test_excluding_a_category_via_settings_actually_stops_ads_on_its_articles(): void
+    {
+        $category = Category::factory()->create();
+        app(SettingsService::class)->set('ads', 'excluded_category_ids', [$category->id]);
+
+        $post = Post::factory()->published()->create([
+            'author_id' => User::factory()->create()->id,
+            'category_id' => $category->id,
+            'content' => collect(range(1, 6))->map(fn ($i) => "<p>Paragraph {$i}.</p>")->implode(''),
+        ]);
+
+        $resolver = app(AdPlacementResolver::class);
+        $blocks = app(ArticleContentRenderer::class)->blocks($post);
+
+        $result = $resolver->interleave($post, $blocks);
+
+        $this->assertFalse($result->contains(fn ($block) => $block['type'] === 'ad'));
     }
 }

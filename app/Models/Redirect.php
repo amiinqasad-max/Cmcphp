@@ -48,8 +48,21 @@ class Redirect extends Model
         // "avoid querying the database unnecessarily on every request").
         // hit-count bumps go through incrementHit() below, which
         // deliberately does NOT invalidate the cache (see its docblock).
-        static::saved(fn () => Cache::forget(self::CACHE_KEY));
-        static::deleted(fn () => Cache::forget(self::CACHE_KEY));
+        //
+        // Statement-bodied, not `fn () => Cache::forget(...)`: forget()
+        // returns a boolean (false when the key was never cached — the
+        // common case in a fresh app/test), and that value would leak
+        // through as this listener's response. Illuminate's event
+        // dispatcher halts every *other* listener registered for the same
+        // event the instant one returns exactly `false` — which silently
+        // stopped RedirectObserver::deleted() (activity logging) from ever
+        // running. A statement body always discards the return value.
+        static::saved(function () {
+            Cache::forget(self::CACHE_KEY);
+        });
+        static::deleted(function () {
+            Cache::forget(self::CACHE_KEY);
+        });
     }
 
     /** "/foo/bar", no trailing slash (except root), no query string, always leading-slash. */

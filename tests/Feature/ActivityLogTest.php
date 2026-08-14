@@ -3,10 +3,16 @@
 namespace Tests\Feature;
 
 use App\Enums\PostStatus;
+use App\Filament\Pages\ManageSettings;
 use App\Models\ActivityLog;
+use App\Models\Menu;
 use App\Models\Post;
+use App\Models\Redirect;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
@@ -78,5 +84,53 @@ class ActivityLogTest extends TestCase
 
         $this->assertDatabaseHas('activity_logs', ['action' => 'test.action']);
         $this->assertNull($log->updated_at ?? null);
+    }
+
+    /** §33: redirects control site-wide URL behavior, so create/update/delete are all logged. */
+    public function test_creating_a_redirect_logs_activity(): void
+    {
+        $redirect = Redirect::factory()->create();
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'redirect.created',
+            'subject_type' => (new Redirect)->getMorphClass(),
+            'subject_id' => $redirect->id,
+        ]);
+    }
+
+    public function test_deleting_a_redirect_logs_activity(): void
+    {
+        $redirect = Redirect::factory()->create();
+        $id = $redirect->id;
+        $redirect->delete();
+
+        $this->assertDatabaseHas('activity_logs', ['action' => 'redirect.deleted', 'subject_id' => $id]);
+    }
+
+    public function test_creating_a_menu_logs_activity(): void
+    {
+        $menu = Menu::factory()->create();
+
+        $this->assertDatabaseHas('activity_logs', [
+            'action' => 'menu.created',
+            'subject_type' => (new Menu)->getMorphClass(),
+            'subject_id' => $menu->id,
+        ]);
+    }
+
+    public function test_saving_settings_logs_one_activity_entry(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $this->seed(RoleSeeder::class);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+        $this->actingAs($admin);
+
+        Livewire::test(ManageSettings::class)
+            ->fillForm(['general' => ['site_name' => 'New Name']])
+            ->call('save');
+
+        $this->assertDatabaseHas('activity_logs', ['action' => 'settings.updated']);
     }
 }

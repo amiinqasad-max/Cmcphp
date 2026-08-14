@@ -40,8 +40,20 @@ class Menu extends Model
             }
         });
 
-        static::saved(fn () => Cache::tags([self::CACHE_TAG])->flush());
-        static::deleted(fn () => Cache::tags([self::CACHE_TAG])->flush());
+        // Statement-bodied, not `fn () => ...->flush()`: TaggedCache::flush()
+        // returns a boolean, and Illuminate's event dispatcher halts *every
+        // other listener registered for the same event* the instant one
+        // returns exactly `false` — an arrow function leaks that return
+        // value straight through and would silently stop MenuObserver's
+        // saved/deleted handling (activity logging) from ever running
+        // whenever flush() happened to return false (e.g. an already-empty
+        // cache tag). A statement body always discards it.
+        static::saved(function () {
+            Cache::tags([self::CACHE_TAG])->flush();
+        });
+        static::deleted(function () {
+            Cache::tags([self::CACHE_TAG])->flush();
+        });
     }
 
     public static function uniqueSlugFor(string $base, ?string $ignoreId = null): string

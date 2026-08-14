@@ -2,11 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\Menu;
 use App\Models\Page;
 use App\Models\Post;
+use App\Models\Redirect;
 use App\Models\User;
+use App\Observers\MenuObserver;
 use App\Observers\PageObserver;
 use App\Observers\PostObserver;
+use App\Observers\RedirectObserver;
 use App\Observers\UserObserver;
 use App\Services\ActivityLogger;
 use Illuminate\Auth\Events\Login;
@@ -53,6 +57,8 @@ class AppServiceProvider extends ServiceProvider
         Post::observe(PostObserver::class);
         Page::observe(PageObserver::class);
         User::observe(UserObserver::class);
+        Redirect::observe(RedirectObserver::class);
+        Menu::observe(MenuObserver::class);
 
         Event::listen(Login::class, function (Login $event) {
             app(ActivityLogger::class)->log('auth.login', $event->user, [], $event->user);

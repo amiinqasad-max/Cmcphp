@@ -48,6 +48,11 @@
         nav from the hard-coded fallback below (MenuSeeder creates sensible
         defaults on `db:seed`, but the fallback keeps this resilient even
         without it — e.g. a test hitting the layout directly).
+
+        Fetched once and reused for both the desktop and mobile renders
+        below (rather than instantiating <x-menu> per breakpoint) — a cache
+        hit is cheap, but there's no reason to pay for it three times on
+        one page load.
     --}}
     @php
         $primaryMenuItems = (new \App\View\Components\Menu('primary_navigation'))->items;
@@ -68,7 +73,11 @@
             </button>
 
             @if ($primaryMenuItems && $primaryMenuItems->isNotEmpty())
-                <x-menu location="primary_navigation" class="hidden md:flex" />
+                <ul class="hidden items-center gap-6 text-sm font-medium text-gray-700 md:flex">
+                    @foreach ($primaryMenuItems as $item)
+                        <x-menu-item :item="$item" />
+                    @endforeach
+                </ul>
             @else
                 <ul class="hidden items-center gap-6 text-sm font-medium text-gray-700 md:flex">
                     <li><a href="{{ url('/') }}" class="hover:text-amber-600">Home</a></li>
@@ -79,7 +88,11 @@
 
         <div id="mobile-nav" x-ref="mobileNav" class="hidden border-t border-gray-100 px-4 py-3 md:hidden">
             @if ($primaryMenuItems && $primaryMenuItems->isNotEmpty())
-                <x-menu location="primary_navigation" :mobile="true" />
+                <ul class="space-y-1">
+                    @foreach ($primaryMenuItems as $item)
+                        <x-menu-item :item="$item" :mobile="true" />
+                    @endforeach
+                </ul>
             @else
                 <ul class="space-y-1">
                     <li><a href="{{ url('/') }}" class="block rounded px-3 py-2 text-gray-700 hover:bg-gray-50">Home</a></li>

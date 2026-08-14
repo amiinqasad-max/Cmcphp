@@ -3,10 +3,13 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\AdSlotResource;
+use App\Filament\Resources\AdSlotResource\Pages\CreateAdSlot;
+use App\Models\AdSlot;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AdSlotResourceTest extends TestCase
@@ -38,5 +41,32 @@ class AdSlotResourceTest extends TestCase
         $this->actingAs($author)
             ->get(AdSlotResource::getUrl('index'))
             ->assertForbidden();
+    }
+
+    /**
+     * §14/§34: ad_client is no longer an admin-entered field (it's not in
+     * this form-fill at all) — CreateAdSlot::mutateFormDataBeforeCreate()
+     * must still populate the NOT NULL column from ADSENSE_CLIENT_ID so
+     * creating a slot doesn't require typing a redundant publisher ID.
+     */
+    public function test_creating_an_ad_slot_auto_fills_ad_client_from_config(): void
+    {
+        config(['services.adsense.client_id' => 'ca-pub-2222222222222222']);
+
+        $editor = User::factory()->create();
+        $editor->assignRole('editor');
+        $this->actingAs($editor);
+
+        Livewire::test(CreateAdSlot::class)
+            ->fillForm([
+                'name' => 'Article Top',
+                'ad_slot_code' => '1234567890',
+                'format' => 'auto',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $slot = AdSlot::where('name', 'Article Top')->firstOrFail();
+        $this->assertSame('ca-pub-2222222222222222', $slot->ad_client);
     }
 }

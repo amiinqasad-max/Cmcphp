@@ -25,6 +25,9 @@ use Illuminate\Support\Str;
  */
 class SeoService
 {
+    /** Per-request memoization so a repeated settings-driven media lookup (site logo/default social image) never re-queries. */
+    private array $mediaUrlCache = [];
+
     public function __construct(private readonly SettingsService $settings) {}
 
     /** @return array<string, mixed> */
@@ -39,12 +42,13 @@ class SeoService
             $this->generateExcerpt($post->content ?? ''),
             $this->settings->seoDefaultDescription(),
         );
-        $ogImage = $this->firstFilled(
-            $this->mediaUrl($seo?->og_image_media_id),
-            $post->featuredImage?->url,
-            $this->mediaUrl($this->settings->seoDefaultOgImageMediaId()),
-        );
-        $twitterImage = $this->firstFilled($this->mediaUrl($seo?->twitter_image_media_id), $ogImage);
+        // Read straight off the already eager-loaded seo.ogImage/seo.twitterImage/
+        // featuredImage relations (ArticleController::show() loads them) rather
+        // than re-querying Media by ID — only the site-wide default (settings)
+        // tier ever needs a fresh lookup, and defaultSocialImageUrl() memoizes
+        // that within the request.
+        $ogImage = $seo?->ogImage?->url ?: ($post->featuredImage?->url ?: $this->defaultSocialImageUrl());
+        $twitterImage = $seo?->twitterImage?->url ?: $ogImage;
 
         $canonical = $this->firstFilled($seo?->canonical_url, route('articles.show', $post));
 
@@ -80,11 +84,7 @@ class SeoService
             $this->generateExcerpt($page->content ?? ''),
             $this->settings->seoDefaultDescription(),
         );
-        $ogImage = $this->firstFilled(
-            $this->mediaUrl($seo?->og_image_media_id),
-            $page->featuredImage?->url,
-            $this->mediaUrl($this->settings->seoDefaultOgImageMediaId()),
-        );
+        $ogImage = $seo?->ogImage?->url ?: ($page->featuredImage?->url ?: $this->defaultSocialImageUrl());
 
         return [
             'title' => $title,
@@ -99,7 +99,7 @@ class SeoService
             'twitterCard' => $seo?->twitter_card ?: $this->settings->seoDefaultTwitterCard(),
             'twitterTitle' => $this->firstFilled($seo?->twitter_title, $seo?->og_title, $title),
             'twitterDescription' => $this->firstFilled($seo?->twitter_description, $seo?->og_description, $description),
-            'twitterImage' => $this->firstFilled($this->mediaUrl($seo?->twitter_image_media_id), $ogImage),
+            'twitterImage' => $seo?->twitterImage?->url ?: $ogImage,
             'jsonLd' => $this->breadcrumbsJsonLd([
                 ['name' => 'Home', 'url' => route('home')],
                 ['name' => $page->title, 'url' => route('pages.show', $page)],
@@ -121,7 +121,7 @@ class SeoService
             'robotsFollow' => $this->settings->seoDefaultRobotsFollow(),
             'ogTitle' => $title,
             'ogDescription' => $description,
-            'ogImage' => $this->firstFilled($category->image?->url, $this->mediaUrl($this->settings->seoDefaultOgImageMediaId())),
+            'ogImage' => $category->image?->url ?: $this->defaultSocialImageUrl(),
             'ogType' => 'website',
             'twitterCard' => $this->settings->seoDefaultTwitterCard(),
             'jsonLd' => $this->breadcrumbsJsonLd([
@@ -145,7 +145,7 @@ class SeoService
             'robotsFollow' => $this->settings->seoDefaultRobotsFollow(),
             'ogTitle' => $title,
             'ogDescription' => $description,
-            'ogImage' => $this->mediaUrl($this->settings->seoDefaultOgImageMediaId()),
+            'ogImage' => $this->defaultSocialImageUrl(),
             'ogType' => 'website',
             'twitterCard' => $this->settings->seoDefaultTwitterCard(),
         ];
@@ -173,7 +173,7 @@ class SeoService
             'robotsFollow' => $this->settings->seoDefaultRobotsFollow(),
             'ogTitle' => $title,
             'ogDescription' => $description,
-            'ogImage' => $this->mediaUrl($this->settings->seoDefaultOgImageMediaId()),
+            'ogImage' => $this->defaultSocialImageUrl(),
             'ogType' => 'website',
             'twitterCard' => $this->settings->seoDefaultTwitterCard(),
             'jsonLd' => [
@@ -209,7 +209,13 @@ class SeoService
             return null;
         }
 
-        return Media::find($mediaId)?->url;
+        return $this->mediaUrlCache[$mediaId] ??= Media::find($mediaId)?->url;
+    }
+
+    /** The site-wide fallback social image (settings.seo.default_og_image_media_id), memoized. */
+    private function defaultSocialImageUrl(): ?string
+    {
+        return $this->mediaUrl($this->settings->seoDefaultOgImageMediaId());
     }
 
     /** @return array<string, mixed> */

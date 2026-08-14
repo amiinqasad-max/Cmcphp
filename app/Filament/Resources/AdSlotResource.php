@@ -33,11 +33,10 @@ class AdSlotResource extends Resource
                         ->unique(ignoreRecord: true)
                         ->maxLength(255)
                         ->helperText('Internal label, e.g. "Article Top" or "After Paragraph 3".'),
-                    Forms\Components\TextInput::make('ad_client')
+                    Forms\Components\Placeholder::make('ad_client_display')
                         ->label('AdSense client (publisher ID)')
-                        ->required()
-                        ->placeholder('ca-pub-XXXXXXXXXXXXXXXX')
-                        ->maxLength(255),
+                        ->content(fn () => config('services.adsense.client_id') ?: 'Not set — configure ADSENSE_CLIENT_ID in .env')
+                        ->helperText('Environment-only (§14/§34): a site only ever has one AdSense publisher ID, so it is never a per-slot admin field — set ADSENSE_CLIENT_ID once and every slot uses it.'),
                     Forms\Components\TextInput::make('ad_slot_code')
                         ->label('AdSense slot ID')
                         ->required()
@@ -63,7 +62,6 @@ class AdSlotResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('ad_client')->label('Client')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('ad_slot_code')->label('Slot ID')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('format')->badge(),
                 Tables\Columns\IconColumn::make('is_responsive')->boolean(),

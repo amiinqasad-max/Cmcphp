@@ -18,7 +18,7 @@ class CategoryController extends Controller
 
     public function show(string $slug): View
     {
-        $category = Category::where('slug', $slug)->firstOrFail();
+        $category = Category::with('image')->where('slug', $slug)->firstOrFail();
         $page = Paginator::resolveCurrentPage() ?: 1;
 
         $posts = $this->cache->rememberPosts("categories.{$category->id}.page.{$page}", fn () => $category->posts()

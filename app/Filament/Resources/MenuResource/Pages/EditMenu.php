@@ -10,6 +10,7 @@ use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
 use App\Models\Post;
+use App\Services\ActivityLogger;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -85,7 +86,14 @@ class EditMenu extends EditRecord
                                 ->placeholder('/some-path or https://example.com')
                                 ->visible(fn (Get $get) => MenuItemType::tryFrom((string) $get('type')) === MenuItemType::Custom)
                                 ->required(fn (Get $get) => MenuItemType::tryFrom((string) $get('type')) === MenuItemType::Custom)
-                                ->maxLength(2048),
+                                ->maxLength(2048)
+                                ->rules([
+                                    fn (): \Closure => function (string $attribute, $value, \Closure $fail) {
+                                        if (filled($value) && ! MenuItem::isSafeUrl((string) $value)) {
+                                            $fail('Enter an internal path starting with "/" or a full http(s):// URL — other URL schemes (e.g. "javascript:") are not allowed.');
+                                        }
+                                    },
+                                ]),
                             Forms\Components\Select::make('target')
                                 ->options(collect(LinkTarget::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]))
                                 ->default(LinkTarget::SameWindow->value)
@@ -123,6 +131,8 @@ class EditMenu extends EditRecord
 
         DB::transaction(function () use ($menu, &$keptIds) {
             $this->persistTree($menu, $this->pendingItemsTree, null, $keptIds);
+
+            app(ActivityLogger::class)->log('menu.items_updated', $menu, ['items_count' => count($keptIds)]);
 
             $menu->items()
                 ->when($keptIds, fn ($query) => $query->whereNotIn('id', $keptIds), fn ($query) => $query)

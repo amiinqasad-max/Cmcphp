@@ -44,8 +44,17 @@ class MenuItem extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::tags([Menu::CACHE_TAG])->flush());
-        static::deleted(fn () => Cache::tags([Menu::CACHE_TAG])->flush());
+        // Statement-bodied, not `fn () => ...->flush()` — see Menu::booted()'s
+        // comment: an arrow function here would leak flush()'s boolean
+        // return value as this listener's response, and Illuminate's event
+        // dispatcher halts every other listener on the same event the
+        // instant one returns exactly `false`.
+        static::saved(function () {
+            Cache::tags([Menu::CACHE_TAG])->flush();
+        });
+        static::deleted(function () {
+            Cache::tags([Menu::CACHE_TAG])->flush();
+        });
     }
 
     public function menu(): BelongsTo
@@ -102,7 +111,7 @@ class MenuItem extends Model
     public function isBroken(): bool
     {
         if ($this->type === MenuItemType::Custom) {
-            return blank($this->url);
+            return blank($this->url) || ! self::isSafeUrl($this->url);
         }
 
         $linkable = $this->linkable;
@@ -116,6 +125,34 @@ class MenuItem extends Model
             $linkable instanceof Page => $linkable->status !== PageStatus::Published,
             default => false, // Category — existing is enough
         };
+    }
+
+    /**
+     * A Custom-type item's URL is only ever rendered as a raw `href` — so
+     * unlike an internal reference (which resolves through route()), it's
+     * the one place a menu item could carry a `javascript:`/`data:` URI
+     * and produce a stored-XSS link on the public site if an admin account
+     * were ever compromised. Only an internal path or a real http(s) URL
+     * is considered safe; anything else is treated the same as a broken
+     * reference (isBroken()) and simply never rendered. Checked both at
+     * save time (the Filament form rule) and at render time (isBroken())
+     * so a URL that somehow bypassed the form is still never emitted.
+     */
+    public static function isSafeUrl(?string $url): bool
+    {
+        if (blank($url)) {
+            return false;
+        }
+
+        // Reject protocol-relative URLs ("//evil.example.com") — they look
+        // like an internal path but resolve to an arbitrary external host.
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//')) {
+            return true;
+        }
+
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        return in_array($scheme, ['http', 'https'], true) && filter_var($url, FILTER_VALIDATE_URL) !== false;
     }
 
     /**

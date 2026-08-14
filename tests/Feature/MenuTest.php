@@ -168,12 +168,53 @@ class MenuTest extends TestCase
         $this->assertSame(route('pages.show', $page), $item->resolvedUrl());
     }
 
-    public function test_custom_url_item_is_never_considered_broken(): void
+    public function test_a_safe_custom_url_item_is_never_considered_broken(): void
     {
         $menu = Menu::factory()->create();
         $item = MenuItem::factory()->for($menu)->create(['type' => MenuItemType::Custom->value, 'url' => '/anything']);
 
         $this->assertFalse($item->isBroken());
+    }
+
+    /**
+     * §14/§34 XSS: a Custom item's URL is rendered as a raw href with no
+     * further sanitization — javascript:/data: URIs must never be
+     * considered a valid link, at either save time (isSafeUrl(), used by
+     * the Filament form rule) or render time (isBroken()).
+     */
+    public function test_javascript_scheme_url_is_rejected_as_unsafe(): void
+    {
+        $this->assertFalse(MenuItem::isSafeUrl('javascript:alert(1)'));
+        $this->assertFalse(MenuItem::isSafeUrl('data:text/html,<script>alert(1)</script>'));
+        $this->assertFalse(MenuItem::isSafeUrl('vbscript:msgbox(1)'));
+    }
+
+    public function test_protocol_relative_url_is_rejected_as_unsafe(): void
+    {
+        $this->assertFalse(MenuItem::isSafeUrl('//evil.example.com/phish'));
+    }
+
+    public function test_internal_paths_and_https_urls_are_safe(): void
+    {
+        $this->assertTrue(MenuItem::isSafeUrl('/articles'));
+        $this->assertTrue(MenuItem::isSafeUrl('https://example.com'));
+        $this->assertTrue(MenuItem::isSafeUrl('http://example.com/page'));
+    }
+
+    public function test_a_menu_item_with_an_unsafe_custom_url_is_treated_as_broken_and_never_rendered(): void
+    {
+        $menu = Menu::factory()->create(['location' => 'primary_navigation', 'is_active' => true]);
+        MenuItem::factory()->for($menu)->create([
+            'type' => MenuItemType::Custom->value,
+            'label' => 'Malicious Link',
+            'url' => 'javascript:alert(document.cookie)',
+        ]);
+
+        $item = $menu->items()->first();
+        $this->assertTrue($item->isBroken());
+        $this->assertCount(0, $menu->renderableTree());
+
+        $this->get(route('home'))->assertOk()->assertDontSee('javascript:alert', false);
     }
 
     public function test_self_parenting_is_detected_as_a_cycle(): void
