@@ -1,0 +1,11 @@
+# Example crontab entry for CMCPHP's scheduler (§55).
+#
+# Laravel's scheduler (routes/console.php) needs exactly one entry: it
+# wakes up every minute, checks what's due, and runs it in-process. Do NOT
+# add separate cron entries for analytics:aggregate / tracking:prune /
+# posts:publish-scheduled — they're already registered on the schedule in
+# routes/console.php and would run twice.
+#
+# Install with: crontab -u www-data -e   (paste the line below)
+
+* * * * * cd /var/www/cmcphp && php artisan schedule:run >> /dev/null 2>&1

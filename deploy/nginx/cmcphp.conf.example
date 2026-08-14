@@ -1,0 +1,66 @@
+# Example nginx server block for CMCPHP (§55).
+#
+# This is a starting point, not a drop-in — replace the domain, TLS
+# certificate paths, and PHP-FPM socket path for your actual server, and
+# run `nginx -t` before reloading. Assumes certificates were obtained via
+# certbot (see docs/DEPLOYMENT.md §"SSL").
+
+# Redirect all plain HTTP to HTTPS.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name example.com www.example.com;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name example.com www.example.com;
+
+    root /var/www/cmcphp/public;
+    index index.php;
+
+    ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers off;
+
+    # Laravel's own SetSecurityHeaders middleware (app/Http/Middleware) sets
+    # X-Content-Type-Options / X-Frame-Options / Referrer-Policy /
+    # Permissions-Policy on every response already — don't duplicate them
+    # here, but HSTS is a transport-level concern nginx is better placed for.
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    client_max_body_size 64m; # video/media uploads via the Filament admin — tune to your largest expected upload
+
+    access_log /var/log/nginx/cmcphp-access.log;
+    error_log  /var/log/nginx/cmcphp-error.log;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # Cache static build assets aggressively; Vite fingerprints filenames
+    # so a long max-age is safe.
+    location ~* \.(?:css|js|woff2?|ttf|svg|png|jpe?g|gif|webp|avif)$ {
+        expires 30d;
+        access_log off;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass unix:/run/php/php8.4-fpm-cmcphp.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_read_timeout 120;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    # Deny everything else PHP outside the front controller, and dotfiles.
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}

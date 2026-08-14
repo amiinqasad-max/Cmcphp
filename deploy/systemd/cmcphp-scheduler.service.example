@@ -1,0 +1,19 @@
+# Example systemd service+timer pair for CMCPHP's scheduler — an
+# alternative to deploy/cmcphp-crontab.example if your server doesn't run
+# cron. Pick ONE of the two, not both.
+#
+# Install both this file and cmcphp-scheduler.timer.example to
+# /etc/systemd/system/ (drop the .example suffix from each), then:
+#   systemctl daemon-reload
+#   systemctl enable --now cmcphp-scheduler.timer
+
+[Unit]
+Description=CMCPHP scheduler tick (runs whatever routes/console.php has due)
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/cmcphp
+ExecStart=/usr/bin/php /var/www/cmcphp/artisan schedule:run

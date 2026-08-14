@@ -1,0 +1,24 @@
+# Example systemd unit for CMCPHP's queue worker — an alternative to
+# deploy/supervisor/cmcphp-worker.conf.example if your server doesn't run
+# supervisor. Pick ONE of the two, not both.
+#
+# Install: copy to /etc/systemd/system/cmcphp-worker@.service, then:
+#   systemctl daemon-reload
+#   systemctl enable --now cmcphp-worker@1 cmcphp-worker@2
+# (the @N instances give you two worker processes, matching numprocs=2 in
+# the supervisor example — add more cmcphp-worker@N units for more)
+
+[Unit]
+Description=CMCPHP queue worker %i
+After=network.target redis-server.service postgresql.service
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/cmcphp
+ExecStart=/usr/bin/php /var/www/cmcphp/artisan queue:work redis --queue=default --sleep=3 --tries=3 --max-time=3600
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

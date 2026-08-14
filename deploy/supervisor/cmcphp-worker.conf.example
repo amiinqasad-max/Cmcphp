@@ -1,0 +1,28 @@
+; Example supervisor program for CMCPHP's queue workers (§55).
+; Drop into /etc/supervisor/conf.d/cmcphp-worker.conf, then:
+;   supervisorctl reread && supervisorctl update && supervisorctl start cmcphp-worker:*
+;
+; Processes ProcessEngagementEventBatch / ProcessAdEventBatch /
+; DetectVideoDurationJob (app/Jobs) off the 'redis' queue connection's
+; dedicated 'queue' Redis DB (config/database.php's redis.queue connection,
+; REDIS_QUEUE_DB — kept separate from the cache DB so a `queue:flush` or
+; cache eviction can never touch the other's data).
+;
+; --tries=3: a job that fails 3 times is left for `queue:failed-table` /
+; `queue:retry` rather than looping forever. --max-time=3600 recycles each
+; worker process hourly to shed any accumulated memory, which matters more
+; here than usual since one job path (DetectVideoDurationJob) shells out to
+; getID3 for media probing.
+[program:cmcphp-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/cmcphp/artisan queue:work redis --queue=default --sleep=3 --tries=3 --max-time=3600
+directory=/var/www/cmcphp
+autostart=true
+autorestart=true
+stopasgroup=true
+killasgroup=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/log/cmcphp/worker.log
+stopwaitsecs=60

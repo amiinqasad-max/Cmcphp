@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Example zero(ish)-downtime deploy script for CMCPHP (§55).
+#
+# "Zero-ish" because php artisan down puts up a maintenance page for the
+# few seconds migrations take, rather than actually zero downtime — real
+# zero-downtime needs a second app root + symlink swap, which is out of
+# scope for this single-server example. Copy this out of deploy/, adjust
+# the paths, and review each step before wiring it into CI.
+set -euo pipefail
+
+APP_DIR="/var/www/cmcphp"
+cd "$APP_DIR"
+
+echo "==> Enabling maintenance mode"
+php artisan down --retry=15 || true   # already-down is fine, don't abort the deploy over it
+
+echo "==> Pulling latest code"
+git fetch origin
+git checkout main
+git reset --hard origin/main
+
+echo "==> Installing PHP dependencies"
+composer install --no-dev --optimize-autoloader --no-interaction
+
+echo "==> Installing JS dependencies and building assets"
+npm ci
+npm run build
+
+echo "==> Running database migrations"
+php artisan migrate --force
+
+echo "==> Rebuilding framework caches"
+php artisan config:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan event:cache
+
+echo "==> Restarting queue workers (picks up new code; in-flight jobs finish first)"
+php artisan queue:restart
+
+# If PHP-FPM's opcache.validate_timestamps is off in production (recommended
+# for performance), deployed code won't be picked up until workers reload —
+# reset it explicitly rather than relying on file mtime checks:
+if command -v cachetool >/dev/null 2>&1; then
+    echo "==> Resetting OPcache via cachetool"
+    cachetool opcache:reset --fcgi=/run/php/php8.4-fpm-cmcphp.sock
+else
+    echo "==> cachetool not found — reload PHP-FPM instead to clear OPcache"
+    sudo systemctl reload php8.4-fpm
+fi
+
+echo "==> Disabling maintenance mode"
+php artisan up
+
+echo "==> Deploy complete"
