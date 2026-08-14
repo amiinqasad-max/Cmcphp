@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AdPlacementType;
+use App\Enums\AdSlotStatus;
 use App\Enums\MediaType;
 use App\Enums\NextArticleMode;
 use App\Enums\PostStatus;
@@ -178,6 +180,46 @@ class PostResource extends Resource
                                         ->suffix('%')
                                         ->default(90)
                                         ->required(),
+                                ])
+                                ->columns(2),
+                        ]),
+                    Forms\Components\Section::make('Advertisements')
+                        ->description(fn (?Post $record) => 'Current ads: '.($record?->adPlacements()->count() ?? 0).' / '.app(SettingsService::class)->maxAdsPerArticle().' (site-wide maximum). Remaining slots are filled automatically per the site-wide placement rules.')
+                        ->schema([
+                            Forms\Components\Repeater::make('adPlacements')
+                                ->relationship()
+                                ->orderColumn('position_order')
+                                ->defaultItems(0)
+                                ->addActionLabel('Add placement')
+                                ->itemLabel(fn (array $state) => isset($state['placement_type']) ? AdPlacementType::from($state['placement_type'])->label() : 'New placement')
+                                ->schema([
+                                    Forms\Components\Select::make('placement_type')
+                                        ->label('Placement')
+                                        ->options(collect(AdPlacementType::cases())->mapWithKeys(fn ($t) => [$t->value => $t->label()]))
+                                        ->live()
+                                        ->required(),
+                                    Forms\Components\TextInput::make('paragraph_index')
+                                        ->label('After paragraph #')
+                                        ->numeric()
+                                        ->minValue(1)
+                                        ->visible(fn (Forms\Get $get) => $get('placement_type') === AdPlacementType::AfterParagraph->value)
+                                        ->required(fn (Forms\Get $get) => $get('placement_type') === AdPlacementType::AfterParagraph->value),
+                                    Forms\Components\Select::make('video_position')
+                                        ->label('Video')
+                                        ->options([1 => 'Video 1', 2 => 'Video 2', 3 => 'Video 3'])
+                                        ->visible(fn (Forms\Get $get) => in_array($get('placement_type'), [AdPlacementType::BeforeVideo->value, AdPlacementType::AfterVideo->value], true))
+                                        ->required(fn (Forms\Get $get) => in_array($get('placement_type'), [AdPlacementType::BeforeVideo->value, AdPlacementType::AfterVideo->value], true)),
+                                    Forms\Components\Select::make('ad_slot_id')
+                                        ->label('Ad slot')
+                                        ->relationship('adSlot', 'name', fn (Builder $query) => $query->where('status', AdSlotStatus::Active->value))
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(),
+                                    Forms\Components\Toggle::make('status')
+                                        ->label('Active')
+                                        ->default(true)
+                                        ->dehydrateStateUsing(fn ($state) => $state ? AdSlotStatus::Active->value : AdSlotStatus::Inactive->value)
+                                        ->formatStateUsing(fn ($state) => $state === AdSlotStatus::Active->value || $state === true),
                                 ])
                                 ->columns(2),
                         ]),

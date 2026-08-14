@@ -15,6 +15,10 @@
 
     {{-- Public site never loads Filament/admin panel assets. --}}
     @stack('head')
+
+    @if (config('services.adsense.client_id'))
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ config('services.adsense.client_id') }}" crossorigin="anonymous"></script>
+    @endif
 </head>
 <body class="min-h-screen bg-white text-gray-900 antialiased font-sans">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded focus:bg-amber-500 focus:px-4 focus:py-2 focus:text-white">

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Tracking\AdEventController;
 use App\Http\Controllers\Api\Tracking\CompletionStatusController;
 use App\Http\Controllers\Api\Tracking\EngagementEventController;
 use App\Http\Controllers\ProfileController;
@@ -21,6 +22,7 @@ Route::get('/pages/{slug}', [PageController::class, 'show'])->name('pages.show')
 Route::middleware('throttle:tracking')->prefix('api/track')->name('api.track.')->group(function () {
     Route::post('/events', [EngagementEventController::class, 'store'])->name('events');
     Route::get('/completion', [CompletionStatusController::class, 'show'])->name('completion');
+    Route::post('/ad-events', [AdEventController::class, 'store'])->name('ad-events');
 });
 
 Route::get('/dashboard', function () {

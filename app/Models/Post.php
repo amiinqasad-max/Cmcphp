@@ -124,6 +124,11 @@ class Post extends Model
         return $this->videos()->where('is_required', true);
     }
 
+    public function adPlacements(): HasMany
+    {
+        return $this->hasMany(AdPlacement::class)->orderBy('position_order');
+    }
+
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('status', PostStatus::Published)

@@ -47,6 +47,8 @@
             @foreach ($blocks as $block)
                 @if ($block['type'] === 'video')
                     <x-video-player :video="$block['video']" />
+                @elseif ($block['type'] === 'ad')
+                    <x-ad-slot :ad-slot="$block['adSlot']" :post-id="$post->id" :ad-placement-id="$block['adPlacementId']" />
                 @elseif (filled($block['html']))
                     {!! $block['html'] !!}
                 @endif

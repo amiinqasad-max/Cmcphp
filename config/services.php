@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'adsense' => [
+        // The AdSense loader script is only injected on pages that actually
+        // render an ad slot — see resources/views/components/layouts/public.blade.php.
+        'client_id' => env('ADSENSE_CLIENT_ID'),
+    ],
+
 ];

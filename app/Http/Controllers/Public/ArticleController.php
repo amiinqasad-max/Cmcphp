@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
+use App\Services\AdPlacementResolver;
 use App\Services\ArticleContentRenderer;
 use Illuminate\View\View;
 
 class ArticleController extends Controller
 {
-    public function __construct(private readonly ArticleContentRenderer $contentRenderer) {}
+    public function __construct(
+        private readonly ArticleContentRenderer $contentRenderer,
+        private readonly AdPlacementResolver $adPlacementResolver,
+    ) {}
 
     public function index(): View
     {
@@ -32,7 +36,7 @@ class ArticleController extends Controller
             ->where('slug', $slug)
             ->firstOrFail();
 
-        $blocks = $this->contentRenderer->blocks($post);
+        $blocks = $this->adPlacementResolver->interleave($post, $this->contentRenderer->blocks($post));
 
         $related = Post::published()
             ->whereKeyNot($post->id)
