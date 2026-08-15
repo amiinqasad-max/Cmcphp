@@ -2,7 +2,7 @@
 
 A custom CMS and content publishing platform built from scratch on **Laravel + Filament + PostgreSQL** — a WordPress alternative purpose-built for article publishing, with a three-video engagement system, first-party analytics, an AdSense-ready advertisement manager, admin-managed navigation menus, and a full SEO system (canonical URLs, dynamic sitemap/robots, Open Graph/Twitter cards, JSON-LD).
 
-No WordPress, no PHP CMS packages, no Supabase.
+No WordPress, no PHP CMS packages, no Supabase SDK/PostgREST/Auth — the app talks to Postgres directly via Eloquent. (Postgres itself may be hosted on Supabase's infrastructure; see `.env.example`.)
 
 ## Stack
 

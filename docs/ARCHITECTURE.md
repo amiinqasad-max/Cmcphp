@@ -1,7 +1,7 @@
 # CMCPHP — Custom CMS + Content Platform
 ## Architecture Document (v1)
 
-Stack: **Laravel 11 + Filament 3 + PostgreSQL + Redis + S3-compatible storage**, deployed on Nginx/PHP-FPM with queue workers and the scheduler. No WordPress, no PHP CMS packages, no Supabase.
+Stack: **Laravel 11 + Filament 3 + PostgreSQL + Redis + S3-compatible storage**, deployed on Nginx/PHP-FPM with queue workers and the scheduler. No WordPress, no PHP CMS packages, no Supabase SDK/PostgREST/Auth — the app is a plain Eloquent client of Postgres. Postgres itself can be hosted on Supabase's managed Postgres infrastructure (project `vpsnfsvxurojymjhrslz`); RLS is enabled with no policies on every table there specifically to keep Supabase's own anon/authenticated API roles locked out, since this app is the only intended gateway to the data.
 
 ---
 
